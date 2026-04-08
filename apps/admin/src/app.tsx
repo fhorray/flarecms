@@ -8,8 +8,8 @@ import { LoginPage } from '@/pages/login';
 import { DashboardPage } from '@/pages/dashboard';
 import { CollectionsPage } from '@/pages/collections';
 import { CollectionDetailPage } from '@/pages/collection-detail';
-import { RecordsPage } from '@/pages/records-page';
-import { RecordDetailPage } from '@/pages/record-detail-page';
+import { DocumentsPage } from '@/pages/documents-page';
+import { DocumentDetailPage } from '@/pages/document-detail-page';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 export default function App() {
@@ -33,7 +33,7 @@ export default function App() {
           <div className="text-center max-w-sm">
             <h1 className="text-6xl font-black mb-4 tracking-tighter text-foreground opacity-10">404</h1>
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] mb-8">
-              Module Node Not Found
+              Document Module Not Found
             </p>
             <button
               onClick={() => $router.open('/')}
@@ -64,13 +64,13 @@ export default function App() {
           />
         )}
 
-        {page.route === 'record_list' && <RecordsPage />}
-        {page.route === 'record_edit' && <RecordDetailPage />}
+        {page.route === 'document_list' && <DocumentsPage />}
+        {page.route === 'document_edit' && <DocumentDetailPage />}
         
         {/* Login route while already authenticated -> redirect to home via layout logic or just show dashboard */}
         {page.route === 'login' && <DashboardPage />}
 
-        {!['home', 'collections', 'collection', 'record_list', 'record_edit', 'login'].includes(page.route) && (
+        {!['home', 'collections', 'collection', 'document_list', 'document_edit', 'login'].includes(page.route) && (
           <div className="flex flex-col items-center justify-center py-40">
             <div className="size-16 bg-muted rounded-xl flex items-center justify-center mb-8 border shadow-sm">
               <div className="size-6 bg-primary/20 rounded-lg animate-pulse" />

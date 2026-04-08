@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export function RecordsPage() {
+export function DocumentsPage() {
   const page = useStore($router);
   const { data: schema, loading } = useStore($schema);
   const slug = (page as any).params.slug;
@@ -61,7 +61,7 @@ export function RecordsPage() {
             onClick={() => $router.open(`/${slug}/new`)}
           >
             <PlusIcon className="size-3.5 mr-2" />
-            New Entry
+            New Document
           </Button>
         </div>
       </header>

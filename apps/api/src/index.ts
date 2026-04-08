@@ -159,25 +159,73 @@ api.get('/content/:collection', async (c) => {
   const collection = c.req.param('collection');
   const db = createDb(c.env.DB);
   try {
-    const result = await db.run(sql.raw(`SELECT * FROM ec_${collection} WHERE status != 'deleted'`));
-    return c.json(result);
+    const result = await db.all(sql.raw(`SELECT * FROM ec_${collection} WHERE status != 'deleted'`));
+    return c.json({ data: result });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 400);
+  }
+});
+
+api.get('/content/:collection/:id', async (c) => {
+  const collection = c.req.param('collection');
+  const id = c.req.param('id');
+  const db = createDb(c.env.DB);
+  try {
+    const table = sql.raw(`ec_${collection}`);
+    const result = await db.all(sql`SELECT * FROM ${table} WHERE id = ${id}`);
+    if (!result || result.length === 0) return c.json({ error: 'Document not found' }, 404);
+    return c.json({ data: result[0] });
   } catch (e) {
-    return c.json({ error: 'Collection not found or access error' }, 404);
+    return c.json({ error: 'Access error' }, 404);
+  }
+});
+
+api.post('/content/:collection', async (c) => {
+  const collectionName = c.req.param('collection');
+  const body = await c.req.json();
+  const db = createDb(c.env.DB);
+  const id = ulid();
+
+  // Handle Required Columns
+  const slug = body.slug || body.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || id;
+  const status = body.status || 'draft';
+
+  const doc = { 
+    ...body, 
+    id, 
+    slug, 
+    status,
+    created_at: sql`CURRENT_TIMESTAMP`,
+    updated_at: sql`CURRENT_TIMESTAMP`
+  };
+
+  const keys = Object.keys(doc);
+  const table = sql.raw(`ec_${collectionName}`);
+  const columns = sql.raw(keys.join(', '));
+  const placeholders = sql.join(keys.map((k) => sql`${(doc as any)[k]}`), sql`, `);
+
+  try {
+    await db.run(sql`INSERT INTO ${table} (${columns}) VALUES (${placeholders})`);
+    return c.json({ id, slug, success: true }, 201);
+  } catch (e: any) {
+    return c.json({ error: `Failed query: ${e.message}` }, 400);
   }
 });
 
 api.put('/content/:collection/:id', async (c) => {
-  const collection = c.req.param('collection');
+  const collectionName = c.req.param('collection');
   const id = c.req.param('id');
   const body = await c.req.json();
   const db = createDb(c.env.DB);
   
-  const sets = Object.entries(body)
-    .map(([k, v]) => `${k} = ${typeof v === 'string' ? `'${v}'` : v}`)
-    .join(', ');
+  const table = sql.raw(`ec_${collectionName}`);
+  const assignments = sql.join(
+    Object.entries(body).map(([k, v]) => sql`${sql.raw(k)} = ${v}`),
+    sql`, `
+  );
   
   try {
-    await db.run(sql.raw(`UPDATE ec_${collection} SET ${sets}, updated_at = CURRENT_TIMESTAMP WHERE id = '${id}'`));
+    await db.run(sql`UPDATE ${table} SET ${assignments}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`);
     return c.json({ success: true });
   } catch (e: any) {
     return c.json({ error: e.message }, 400);

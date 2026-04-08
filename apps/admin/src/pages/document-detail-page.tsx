@@ -12,10 +12,10 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export function RecordDetailPage() {
+export function DocumentDetailPage() {
   const page = useStore($router);
   const { data: schema, loading: schemaLoading } = useStore($schema);
-  const [record, setRecord] = useState<any>(null);
+  const [document, setDocument] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   const slug = (page as any).params.slug;
@@ -28,9 +28,9 @@ export function RecordDetailPage() {
     return () => $activeSlug.set(null);
   }, [slug]);
 
-  const fetchRecord = async () => {
+  const fetchDocument = async () => {
     if (id === 'new') {
-      setRecord({});
+      setDocument({});
       setLoading(false);
       return;
     }
@@ -39,7 +39,7 @@ export function RecordDetailPage() {
     try {
       const response = await apiFetch(`/api/content/${slug}/${id}`);
       const json = await response.json();
-      setRecord(json.data);
+      setDocument(json.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -48,7 +48,7 @@ export function RecordDetailPage() {
   };
 
   useEffect(() => {
-    fetchRecord();
+    fetchDocument();
   }, [slug, id]);
 
   const handleSubmit = async (data: any) => {
@@ -94,13 +94,13 @@ export function RecordDetailPage() {
           <div className="flex items-center gap-2 mb-1 text-muted-foreground">
             <SparklesIcon className="size-3" />
             <span className="text-[10px] font-semibold uppercase tracking-wider leading-none">
-              Node Processing
+              Document Processing
             </span>
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground leading-none">
             {id === 'new'
-              ? `New ${schema?.labelSingular || 'Entry'}`
-              : `Edit ${schema?.labelSingular || 'Entry'}`}
+              ? `New ${schema?.labelSingular || 'Document'}`
+              : `Edit ${schema?.labelSingular || 'Document'}`}
           </h1>
         </div>
       </header>
@@ -108,7 +108,7 @@ export function RecordDetailPage() {
       <div className="bg-background border rounded-lg p-8 shadow-sm">
         <DynamicForm
           slug={slug}
-          initialData={record}
+          initialData={document}
           onSubmit={handleSubmit}
           onCancel={() => $router.open(`/${slug}`)}
         />

@@ -7,6 +7,6 @@ export const $router = createRouter({
   users: '/users',
   settings: '/settings',
   collection: '/collection/:id/:slug', // Schema Editor
-  record_list: '/:slug', // Records List
-  record_edit: '/:slug/:id', // Record Editor
+  document_list: '/:slug', // Documents List
+  document_edit: '/:slug/:id', // Document Editor
 });

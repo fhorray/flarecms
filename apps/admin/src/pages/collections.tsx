@@ -113,7 +113,7 @@ export function CollectionsPage() {
                             {col.label}
                           </span>
                           <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight">
-                            Collection Node
+                            Data Collection
                           </span>
                         </div>
                       </div>
@@ -135,7 +135,7 @@ export function CollectionsPage() {
                           onClick={() => $router.open(`/${col.slug}`)}
                         >
                           <ExternalLinkIcon className="size-3" />
-                          Records
+                          Documents
                         </Button>
                         <Button
                           variant="outline"

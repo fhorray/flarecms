@@ -102,7 +102,7 @@ export function ContentList({ slug }: { slug: string }) {
               </div>
               <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
                  <span className="size-1.5 bg-primary rounded-full" />
-                 <span>{data.length} Nodes</span>
+                 <span>{data.length} Entries</span>
               </div>
            </div>
         </CardHeader>
@@ -110,7 +110,7 @@ export function ContentList({ slug }: { slug: string }) {
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent text-muted-foreground uppercase text-[10px] font-bold tracking-wider bg-muted/20">
-                <TableHead className="pl-6 py-3">Node Identification</TableHead>
+                <TableHead className="pl-6 py-3">Document Identification</TableHead>
                 {schema?.fields?.slice(0, 2).map((field: any) => (
                   <TableHead key={field.id}>{field.label}</TableHead>
                 ))}
