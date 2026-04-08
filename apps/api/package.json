@@ -1,0 +1,25 @@
+{
+  "name": "flare-api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "mkdir -p ../admin/dist && wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:push": "wrangler d1 migrations apply flarecms --remote",
+    "db:local": "wrangler d1 migrations apply flarecms --local",
+    "db:migrate": "bun --cwd ../../packages/db generate",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@flare/auth": "workspace:*",
+    "@flare/db": "workspace:*",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.6.0",
+    "ulidx": "^2.4.1"
+  },
+  "devDependencies": {
+    "wrangler": "^4.81.0",
+    "@cloudflare/workers-types": "^4.20241022.0"
+  }
+}

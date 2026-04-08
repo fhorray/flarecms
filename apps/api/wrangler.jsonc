@@ -1,0 +1,23 @@
+{
+  "name": "flarecms-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-10-22",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "flarecms",
+      "database_id": "9c53eb9a-aaae-429b-888d-921877f654cf",
+      "migrations_dir": "../../packages/db/drizzle"
+    }
+  ],
+  "assets": {
+    "directory": "../admin/dist",
+    "binding": "ASSETS"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "c6ebcf4db1c44bfa80906c466d8d91cb"
+    }
+  ]
+}

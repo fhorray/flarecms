@@ -1,0 +1,27 @@
+{
+  "name": "flarecms",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "packageManager": "bun@1.3.11",
+  "scripts": {
+    "dev": "bun scripts/dev.ts",
+    "build": "turbo run build",
+    "check-types": "tsc --noEmit"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260408.1",
+    "@types/bun": "latest",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "turbo": "^2.9.5",
+    "wrangler": "^4.81.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

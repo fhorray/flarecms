@@ -1,0 +1,19 @@
+{
+  "name": "@flare/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "generate": "drizzle-kit generate",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2",
+    "ulidx": "^2.4.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241022.0",
+    "drizzle-kit": "^0.30.0"
+  }
+}
