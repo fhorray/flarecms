@@ -19,6 +19,21 @@ Unlike traditional bloated CMS architectures, FlareCMS follows two core principl
 
 ## 📦 Getting Started
 
+### Initialize a New Project
+
+The easiest way to start a new FlareCMS project is by using our interactive CLI:
+
+```bash
+bunx flarecms create
+```
+
+This will guide you through:
+- Choosing a project name
+- Selecting a template (e.g., Unified Starter)
+- Installing dependencies automatically
+
+### Development (Monorepo)
+
 ### Prerequisites
 
 - [Bun](https://bun.sh/) installed on your machine.
