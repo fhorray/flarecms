@@ -1,6 +1,6 @@
 {
   "name": "flarecms",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "license": "MIT",
   "description": "FlareCMS Monorepo: A lightweight CsMS for the AI era.",
   "keywords": [
@@ -31,21 +31,21 @@
     "build:all": "bun run build:style && bun run build:client"
   },
   "type": "module",
-  "main": "./src/index.tsx",
+  "main": "./dist/index.js",
   "bin": {
-    "flarecms": "./src/cli/index.ts"
+    "flarecms": "./dist/cli/index.js"
   },
   "exports": {
-    ".": "./src/index.tsx",
-    "./server": "./src/server/index.ts",
-    "./client": "./src/client/index.ts",
+    ".": "./dist/index.js",
+    "./server": "./dist/server/index.js",
+    "./client": "./dist/client/index.js",
     "./style.css": {
       "types": "./style.css.d.ts",
       "default": "./dist/style.css"
     },
-    "./auth": "./src/auth/index.ts",
-    "./db": "./src/db/index.ts",
-    "./cli": "./src/cli/index.ts"
+    "./auth": "./dist/auth/index.js",
+    "./db": "./dist/db/index.js",
+    "./cli": "./dist/cli/index.js"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",

@@ -3,14 +3,14 @@ export function transformValue(val: any, key?: string, isTypeContext = false): a
   const currentIsType = isTypeContext || key === "types" || key === "typings";
 
   if (typeof val === "string") {
-    // ONLY transform if it starts with ./src/ AND ends with .ts BUT NOT .d.ts
-    if (val.startsWith("./src/") && val.endsWith(".ts") && !val.endsWith(".d.ts")) {
+    // ONLY transform if it starts with ./src/ AND ends with .ts/.tsx BUT NOT .d.ts
+    if (val.startsWith("./src/") && (val.endsWith(".ts") || val.endsWith(".tsx")) && !val.endsWith(".d.ts")) {
       if (currentIsType) {
         // Map to Types (now directly in dist/)
-        return val.replace("./src/", "./dist/").replace(/\.ts$/, ".d.ts");
+        return val.replace("./src/", "./dist/").replace(/\.tsx?$/, ".d.ts");
       } else {
         // Map to Compiled JavaScript (now directly in dist/)
-        return val.replace("./src/", "./dist/").replace(/\.ts$/, ".js");
+        return val.replace("./src/", "./dist/").replace(/\.tsx?$/, ".js");
       }
     }
     return val;
