@@ -16,8 +16,17 @@ collectionsRoutes.post('/*', requireRole(['admin']));
 collectionsRoutes.post('/', requireRole(['admin']));
 
 collectionsRoutes.get('/', async (c) => {
+  // 1. Try Cache
+  const cached = await cache.getCollectionList(c.env.KV);
+  if (cached) return apiResponse.ok(c, cached);
+
+  // 2. Fallback to D1
   const db = createDb(c.env.DB);
   const result = await db.selectFrom('fc_collections').selectAll().execute();
+
+  // 3. Populate Cache
+  await cache.setCollectionList(c.env.KV, result);
+
   return apiResponse.ok(c, result);
 });
 
@@ -67,6 +76,9 @@ collectionsRoutes.post('/', async (c) => {
       url_pattern: data.urlPattern || null,
       fields: [],
     });
+
+    // 4. Invalidate List Cache
+    await cache.invalidateCollectionList(c.env.KV);
 
     return apiResponse.created(c, { id, slug: data.slug });
   } catch (e: any) {
@@ -182,10 +194,12 @@ collectionsRoutes.patch('/:id', async (c) => {
       })
       .where('id', '=', id)
       .execute();
+  
+      await cache.invalidateSchema(c.env.KV, collection.slug);
+      await cache.invalidateCollectionList(c.env.KV);
 
-    await cache.invalidateSchema(c.env.KV, collection.slug);
-    return apiResponse.ok(c, { success: true });
-  } catch (e: any) {
+      return apiResponse.ok(c, { success: true });
+    } catch (e: any) {
     return apiResponse.error(c, e.message);
   }
 });

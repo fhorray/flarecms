@@ -25,5 +25,21 @@ export const cache = {
 
   async invalidateSchema(kv: KVNamespace, slug: string) {
     await kv.delete(`schema:${slug}`);
+  },
+
+  async getCollectionList(kv: KVNamespace): Promise<any[] | null> {
+    const data = await kv.get('collections:list');
+    if (!data) return null;
+    return JSON.parse(data);
+  },
+
+  async setCollectionList(kv: KVNamespace, collections: any[]) {
+    await kv.put('collections:list', JSON.stringify(collections), {
+      expirationTtl: 60 * 60 * 24, // 24 hours
+    });
+  },
+
+  async invalidateCollectionList(kv: KVNamespace) {
+    await kv.delete('collections:list');
   }
 };

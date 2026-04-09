@@ -2,7 +2,10 @@ import { z } from 'zod';
 
 export const tokenCreateSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  scopes: z.array(z.string()).min(1, 'At least one scope is required'),
+  scopes: z.array(z.object({
+    resource: z.string(),
+    actions: z.array(z.string()),
+  })).min(1, 'At least one scope is required'),
 });
 
 export const deviceCodeRequestSchema = z.object({

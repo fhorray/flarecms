@@ -1,11 +1,12 @@
 import { Hono } from 'hono';
-import type { Bindings, Variables } from '../index';
+
 import { setupMiddleware, authMiddleware } from '../middlewares/auth';
 import { createDb, ensureUniqueSlug, createCollectionTable, addFieldToTable } from '../../db';
 import { ulid } from 'ulidx';
 import { dynamicContentSchema, collectionSchema, fieldSchema } from '../schemas';
 import { sql } from 'kysely';
 import { cache } from '../lib/cache';
+import type { Bindings, Variables } from 'src/types';
 
 export const mcpRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -119,10 +120,10 @@ mcpRoutes.post("/execute", async (c) => {
       const slug = await ensureUniqueSlug(db, collectionName, baseSlug);
       const status = docData.status || 'draft';
 
-      const doc = { 
-        ...docData, 
-        id, 
-        slug, 
+      const doc = {
+        ...docData,
+        id,
+        slug,
         status,
       };
 
@@ -152,7 +153,7 @@ mcpRoutes.post("/execute", async (c) => {
       if (finalData.slug) {
         finalData.slug = await ensureUniqueSlug(db, collectionName, finalData.slug, id);
       }
-      
+
       await db.updateTable(`ec_${collectionName}` as any)
         .set({
           ...finalData,
@@ -170,10 +171,10 @@ mcpRoutes.post("/execute", async (c) => {
       const data = args;
       const parsed = collectionSchema.safeParse(data);
       if (!parsed.success) return c.json({ error: parsed.error.format() }, 400);
-      
+
       const id = ulid();
       const slug = parsed.data.slug;
-      
+
       await db.insertInto('fc_collections')
         .values({
           id,
@@ -187,10 +188,11 @@ mcpRoutes.post("/execute", async (c) => {
         .execute();
 
       await createCollectionTable(db, slug);
-      
+
       // Sync cache
       await cache.invalidateSchema(c.env.KV, slug);
-      
+      await cache.invalidateCollectionList(c.env.KV);
+
       return c.json({
         content: [{ type: "text", text: `Success: Collection '${slug}' created with ID ${id}` }]
       });
@@ -215,9 +217,10 @@ mcpRoutes.post("/execute", async (c) => {
         .select('slug')
         .where('id', '=', id)
         .executeTakeFirst();
-      
+
       if (updatedCol) {
         await cache.invalidateSchema(c.env.KV, updatedCol.slug);
+        await cache.invalidateCollectionList(c.env.KV);
       }
 
       return c.json({
@@ -238,7 +241,7 @@ mcpRoutes.post("/execute", async (c) => {
         .select('slug')
         .where('id', '=', collectionId)
         .executeTakeFirst();
-        
+
       if (!collection) return c.json({ error: 'Collection not found' }, 404);
 
       const fieldId = ulid();

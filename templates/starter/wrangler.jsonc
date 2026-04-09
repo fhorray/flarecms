@@ -1,10 +1,10 @@
 {
   "name": "flare-starter",
-  "main": "src/index.tsx",
+  "main": "src/index.ts",
   "compatibility_date": "2024-04-01",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
-    "directory": "./public",
+    "directory": "./dist",
     "binding": "ASSETS"
   },
   "d1_databases": [

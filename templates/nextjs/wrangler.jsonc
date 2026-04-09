@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "my-flare-nextjs",
+  "compatibility_date": "2024-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "pages_build_output_dir": ".next",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "my-flare-nextjs-db",
+      "database_id": "REPLACE_WITH_D1_ID"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "REPLACE_WITH_KV_ID"
+    }
+  ],
+  "vars": {
+    "FLARE_API_BASE": "/api"
+  }
+}

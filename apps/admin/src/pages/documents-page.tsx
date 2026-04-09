@@ -71,25 +71,29 @@ export function DocumentsPage() {
 
       {!hasFields && (
         <div className="p-8 border-2 border-dashed border-primary/20 bg-primary/5 rounded-xl animate-in fade-in slide-in-from-top-4 duration-500">
-           <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
-              <div className="size-12 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shrink-0">
-                 <SettingsIcon className="size-6" />
-              </div>
-              <div className="flex-1 space-y-1">
-                 <h3 className="text-sm font-bold uppercase tracking-widest text-primary">Immutable Data Structure</h3>
-                 <p className="text-xs text-muted-foreground font-medium leading-relaxed">
-                    This collection is currently defined with zero fields. In order to begin populating data, you must first initialize your schema definitions in the structural configuration panel.
-                 </p>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-9 px-6 text-[10px] font-black uppercase tracking-widest border-primary/20 hover:bg-primary/10 hover:text-primary transition-colors"
-                onClick={() => $router.open(`/collection/${schema?.id}/${slug}`)}
-              >
-                Launch Builder
-              </Button>
-           </div>
+          <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+            <div className="size-12 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shrink-0">
+              <SettingsIcon className="size-6" />
+            </div>
+            <div className="flex-1 space-y-1">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-primary">
+                Immutable Data Structure
+              </h3>
+              <p className="text-xs text-muted-foreground font-medium leading-relaxed">
+                This collection is currently defined with zero fields. In order
+                to begin populating data, you must first initialize your schema
+                definitions in the structural configuration panel.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 px-6 text-[10px] font-black uppercase tracking-widest border-primary/20 hover:bg-primary/10 hover:text-primary transition-colors"
+              onClick={() => $router.open(`/collection/${schema?.id}/${slug}`)}
+            >
+              Add Fields
+            </Button>
+          </div>
         </div>
       )}
 

@@ -4,21 +4,24 @@ import { createDb } from '../../db';
 
 export const authMiddleware = async (c: Context, next: Next) => {
   const path = c.req.path;
+  
   // Skip auth for login, setup, device public flows, and magic/oauth routes
-  if (
-    path === '/api/auth/login' ||
-    path === '/api/auth/signup' ||
-    path === '/api/auth/registration-settings' ||
-    path === '/api/auth/passkey/options' ||
-    path === '/api/auth/passkey/verify' ||
-    path.startsWith('/api/setup') ||
-    path === '/api/health' ||
-    path.startsWith('/api/device/code') ||
-    path.startsWith('/api/device/token') ||
-    path.startsWith('/api/magic') ||
-    path.startsWith('/api/oauth') ||
-    !path.startsWith('/api')
-  ) {
+  // We check for segments to be path-agnostic (handles /api/auth/login, /cms/auth/login, etc.)
+  const isPublicRoute = 
+    path.endsWith('/auth/login') ||
+    path.endsWith('/auth/signup') ||
+    path.endsWith('/auth/registration-settings') ||
+    path.endsWith('/auth/passkey/options') ||
+    path.endsWith('/auth/passkey/verify') ||
+    path.includes('/setup') ||
+    path.endsWith('/health') || // Match exactly /health or /api/health
+    path.includes('/health/') || 
+    path.includes('/device/code') ||
+    path.includes('/device/token') ||
+    path.includes('/magic') ||
+    path.includes('/oauth');
+
+  if (isPublicRoute) {
     return next();
   }
 
@@ -137,11 +140,10 @@ export const authMiddleware = async (c: Context, next: Next) => {
 };
 
 export const setupMiddleware = async (c: Context, next: Next) => {
-  // If not accessing the API, ignore
-  if (!c.req.path.startsWith('/api')) return next();
+  const path = c.req.path;
 
   // If hitting setup, let it pass
-  if (c.req.path.startsWith('/api/setup')) return next();
+  if (path.includes('/setup')) return next();
 
 
   try {

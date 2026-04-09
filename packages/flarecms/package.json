@@ -26,7 +26,9 @@
   },
   "homepage": "https://flarecms.francy.dev",
   "scripts": {
-    "build:assets": "bun build ./src/dashboard/main.tsx --outfile ./src/dashboard/dist/main.js --minify && node ../../.gemini/antigravity/brain/4532065c-ca9b-4cad-94ca-939b8e8d4324/scratch/build-css-ts.mjs"
+    "build:style": "node ./scripts/prefix-css.mjs",
+    "build:client": "bun build ./src/client/main.tsx --outfile ./dist/main.js --minify",
+    "build:all": "bun run build:style && bun run build:client"
   },
   "type": "module",
   "main": "./src/index.tsx",
@@ -35,6 +37,12 @@
   },
   "exports": {
     ".": "./src/index.tsx",
+    "./server": "./src/server/index.ts",
+    "./client": "./src/client/index.ts",
+    "./style.css": {
+      "types": "./style.css.d.ts",
+      "default": "./dist/style.css"
+    },
     "./auth": "./src/auth/index.ts",
     "./db": "./src/db/index.ts",
     "./cli": "./src/cli/index.ts"
@@ -88,6 +96,10 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241022.0",
     "@tailwindcss/cli": "^4.0.0",
-    "@types/node": "^20.0.0"
+    "@tailwindcss/postcss": "^4.2.2",
+    "@types/node": "^20.0.0",
+    "autoprefixer": "^10.4.27",
+    "postcss": "^8.5.9",
+    "postcss-prefix-selector": "^2.1.1"
   }
 }

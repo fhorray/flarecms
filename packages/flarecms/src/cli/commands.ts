@@ -24,6 +24,11 @@ const TEMPLATES = {
     description: "A pre-configured blog template",
     dir: "templates/blog",
   },
+  nextjs: {
+    name: "Next.js (App Router)",
+    description: "Modern Next.js template with FlareCMS + Hono API",
+    dir: "templates/nextjs",
+  },
 } as const;
 
 export async function createProjectCommand() {
@@ -92,21 +97,37 @@ export async function createProjectCommand() {
   s.start("Creating project...");
 
   try {
-    const template = TEMPLATES[templateKey as keyof typeof TEMPLATES];
+    if (templateKey === 'nextjs') {
+      s.stop("Starting Next.js setup...");
+      
+      // 1. Run create-next-app
+      const nextVersion = "15.1.0"; // Stable default, can be customized
+      p.log.info(`${pc.cyan("Running:")} bun create next-app@${nextVersion} ${projectName} --typescript --tailwind --eslint --app --src-dir false --import-alias "@/*" --use-bun`);
+      
+      try {
+        await execAsync(`bun create next-app@${nextVersion} ${projectName} --typescript --tailwind --eslint --app --src-dir false --import-alias "@/*" --use-bun --yes`, {
+            env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1" }
+        });
+      } catch (err) {
+        // Fallback or handle error
+        p.log.warn("create-next-app failed or was already present. Continuing with injection...");
+      }
 
-    // In Build/Runtime: find the 'templates' folder relative to the CLI script
+      s.start("Injecting FlareCMS configuration...");
+    }
+
+    const template = TEMPLATES[templateKey as keyof typeof TEMPLATES];
     const currentFilePath = fileURLToPath(import.meta.url);
     const cliDir = resolve(currentFilePath, "..");
     const localTemplatesRoot = resolve(cliDir, "..", "..", "..", "..", "templates");
     const localTemplatePath = resolve(localTemplatesRoot, template.dir.split('/').pop() || '');
 
     if (existsSync(localTemplatePath)) {
-      // Manual copy for local development to avoid giget's remote info lookup
       if (!existsSync(projectDir)) {
         mkdirSync(projectDir, { recursive: true });
       }
       cpSync(localTemplatePath, projectDir, { recursive: true });
-    } else {
+    } else if (templateKey !== 'nextjs') {
       // Production flow: download from GitHub
       const remoteSource = `github:fhorray/flarecms/${template.dir}`;
       await downloadTemplate(remoteSource, {
@@ -124,6 +145,7 @@ export async function createProjectCommand() {
       // Ensure flarecms dependency is present
       pkg.dependencies = pkg.dependencies || {};
       pkg.dependencies["flarecms"] = "latest";
+      pkg.dependencies["hono"] = "latest";
 
       writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
     }

@@ -3,20 +3,28 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "bun run build && wrangler deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"
   },
   "dependencies": {
     "flarecms": "latest",
-    "hono": "^4.6.0",
-    "@hono/react-renderer": "^0.1.0",
+    "hono": "^4.12.12",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.3"
   },
   "devDependencies": {
-    "wrangler": "^4.81.0",
-    "@types/react": "^18.3.1",
-    "@types/react-dom": "^18.3.1"
+    "@hono/vite-build": "^1.11.1",
+    "@hono/vite-dev-server": "^0.25.1",
+    "@tailwindcss/vite": "^4.2.2",
+    "@types/react": "^18.3.28",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "tailwindcss": "^4.2.2",
+    "vite": "^6.4.2",
+    "wrangler": "^4.81.1"
   }
 }
