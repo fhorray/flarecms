@@ -8,11 +8,21 @@ import { transformValue } from "./publish-utils";
  * Robust command runner for the publish workflow.
  */
 async function runCommand(command: string, args: string[], cwd: string) {
+  const fullCommand = `${command} ${args.join(" ")}`;
+  console.log(pc.dim(`\nDEBUG: Executing [${fullCommand}] in ${cwd}`));
+  
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { stdio: "inherit", shell: true, cwd });
+    // Using shell: true handles .cmd/.exe resolution on Windows via cmd.exe
+    // which avoids PowerShell Execution Policy restrictions.
+    const child = spawn(command, args, { 
+      stdio: "inherit", 
+      shell: true, 
+      cwd 
+    });
+    
     child.on("close", (code) => {
       if (code === 0) resolve(true);
-      else reject(new Error(`Command '${command} ${args.join(" ")}' failed with code ${code}`));
+      else reject(new Error(`Command '${fullCommand}' failed with code ${code}`));
     });
   });
 }
@@ -133,22 +143,23 @@ async function main() {
     else if (versionType === "patch") newVersion = `${major}.${minor}.${patch + 1}`;
 
     // 3. Create "Dev Mode" Persistence (Base for repo)
+    // We update the local version immediately in our memory object
     devModePkgJson = { ...originalPkgJson, version: newVersion };
 
     // 4. Create "Publish Mode" (Transformation for NPM)
     // We deep clone to avoid polluting devModePkgJson
     const publishPkgJson = JSON.parse(JSON.stringify(devModePkgJson));
     s.message("Preparing distribution package...");
+    
+    // Transform all exports, bin, main, etc. from ./src/*.ts to ./dist/*.js
     if (publishPkgJson.exports) publishPkgJson.exports = transformValue(publishPkgJson.exports);
     if (publishPkgJson.bin) publishPkgJson.bin = transformValue(publishPkgJson.bin);
     if (publishPkgJson.main) publishPkgJson.main = transformValue(publishPkgJson.main, "main");
     if (publishPkgJson.module) publishPkgJson.module = transformValue(publishPkgJson.module, "module");
     if (publishPkgJson.types) publishPkgJson.types = transformValue(publishPkgJson.types, "types");
 
-    // Ensure 'dist' is included in files
-    if (publishPkgJson.files && Array.isArray(publishPkgJson.files)) {
-      if (!publishPkgJson.files.includes("dist")) publishPkgJson.files.push("dist");
-    }
+    // Re-verify 'dist' is the only thing included in the package
+    publishPkgJson.files = ["dist"];
 
     // 5. Write "Publish Mode" to disk TEMPORARILY so build picks it up
     await Bun.write(pkgPath, JSON.stringify(publishPkgJson, null, 2) + "\n");
@@ -162,7 +173,7 @@ async function main() {
 
     // 7. NPM Publish
     s.stop(pc.green(`Metadata prepared for v${newVersion}!`));
-    p.log.info(`Broadcasting to NPM with tag '${tag}'...`);
+    p.log.info(`Broadcasting to NPM with tag '${pc.yellow(tag as string)}'...`);
     await runCommand("npm", ["publish", "--tag", tag as string, "--access", "public"], packageDir);
 
     p.log.success("Published successfully! 🚀");

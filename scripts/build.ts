@@ -24,10 +24,11 @@ async function runBuild() {
     "./src/cli/mcp.ts",
   ];
 
+  // Zero Production Dependencies Strategy:
+  // We bundle EVERYTHING except for peerDependencies (React, Hono, Radix).
+  // This results in a completely self-contained library with no transitive deps.
   const external = [
-    ...Object.keys(pkg.dependencies || {}),
     ...Object.keys(pkg.peerDependencies || {}),
-    ...Object.keys(pkg.devDependencies || {}),
   ];
 
   const result = await build({
