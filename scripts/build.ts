@@ -17,6 +17,8 @@ async function runBuild() {
   // Main entrypoints for subpath exports
   const entrypoints = [
     "./src/index.ts",
+    "./src/server/index.ts",
+    "./src/client/index.ts",
     "./src/auth/index.ts",
     "./src/db/index.ts",
     "./src/cli/index.ts",
@@ -51,6 +53,19 @@ async function runBuild() {
     for (const log of result.logs) {
       console.error(log);
     }
+    process.exit(1);
+  }
+
+  // Build prefixed CSS
+  console.log("🎨 Building prefixed CSS...");
+  const { execSync } = await import("node:child_process");
+  try {
+    execSync("bun run build:style", { cwd: packageDir, stdio: "inherit" });
+    // Copy CSS types to dist
+    const { copyFileSync } = await import("node:fs");
+    copyFileSync(join(packageDir, "style.css.d.ts"), join(distDir, "style.css.d.ts"));
+  } catch (err) {
+    console.error("❌ CSS build failed");
     process.exit(1);
   }
 

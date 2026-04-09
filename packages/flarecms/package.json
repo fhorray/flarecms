@@ -1,6 +1,6 @@
 {
   "name": "flarecms",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "license": "MIT",
   "description": "FlareCMS Monorepo: A lightweight CsMS for the AI era.",
   "files": [
@@ -30,8 +30,7 @@
   "homepage": "https://flarecms.francy.dev",
   "scripts": {
     "build:style": "node ./scripts/prefix-css.mjs",
-    "build:client": "bun build ./src/client/main.tsx --outfile ./dist/main.js --minify",
-    "build:all": "bun run build:style && bun run build:client"
+    "build": "bun ../../scripts/build.ts"
   },
   "type": "module",
   "main": "./dist/index.js",
@@ -43,7 +42,7 @@
     "./server": "./dist/server/index.js",
     "./client": "./dist/client/index.js",
     "./style.css": {
-      "types": "./style.css.d.ts",
+      "types": "./dist/style.css.d.ts",
       "default": "./dist/style.css"
     },
     "./auth": "./dist/auth/index.js",
