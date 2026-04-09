@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { createDb } from '@flare/db';
+import { createDb } from 'flarecms/db';
 import { requireRole } from '../middlewares/rbac';
 import type { Bindings } from '../index';
 import { apiResponse } from '../lib/response';

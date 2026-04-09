@@ -8,17 +8,20 @@
     "dev": "bun scripts/dev.ts",
     "build": "turbo run build",
     "deploy": "bun scripts/deploy.ts",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "pkg:publish": "bun scripts/publish.ts"
   },
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "devDependencies": {
+    "@clack/prompts": "^1.2.0",
     "@cloudflare/workers-types": "^4.20260408.1",
     "@types/bun": "latest",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "picocolors": "^1.1.1",
     "turbo": "^2.9.5",
     "wrangler": "^4.81.0"
   },

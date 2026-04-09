@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { createDb } from '@flare/db';
+import { createDb } from 'flarecms/db';
 import { ulid } from 'ulidx';
 import { deviceCodeRequestSchema, deviceTokenRequestSchema, deviceApproveSchema } from '../schemas/tokens';
 import { encodeHexLowerCase } from '@oslojs/encoding';

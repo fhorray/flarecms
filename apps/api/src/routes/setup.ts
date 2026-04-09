@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
-import { createDb } from '@flare/db';
-import { hashPassword, generateSessionToken } from '@flare/auth';
+import { createDb } from 'flarecms/db';
+import { hashPassword, generateSessionToken } from 'flarecms/auth';
 import {
   generateRegistrationOptions,
   verifyRegistrationResponse,
@@ -11,7 +11,7 @@ import { encodeBase64url } from '@oslojs/encoding';
 import { setupSchema, webauthnOptionsSchema, webauthnVerifySchema } from '../schemas';
 import type { Bindings } from '../index';
 import { apiResponse } from '../lib/response';
-import { runMigrations } from '@flare/db';
+import { runMigrations } from 'flarecms/db';
 
 export const setupRoutes = new Hono<{ Bindings: Bindings }>();
 

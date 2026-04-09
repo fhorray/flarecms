@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { createDb } from '@flare/db';
+import { createDb, ensureUniqueSlug } from 'flarecms/db';
 import { sql } from 'kysely';
 import { ulid } from 'ulidx';
 import { dynamicContentSchema } from '../schemas';
@@ -18,7 +18,7 @@ contentRoutes.delete('/:collection/*', requireScope('delete', 'collection_slug')
 contentRoutes.get('/:collection', requireScope('read', 'collection_slug'), async (c) => {
   const collection = c.req.param('collection');
   const db = createDb(c.env.DB);
-  
+
   const page = Number(c.req.query('page')) || 1;
   const limit = Math.min(Number(c.req.query('limit')) || 20, 100);
   const offset = (page - 1) * limit;
@@ -29,7 +29,7 @@ contentRoutes.get('/:collection', requireScope('read', 'collection_slug'), async
       .select(db.fn.count('id').as('count'))
       .where('status', '!=', 'deleted')
       .executeTakeFirst();
-    
+
     const total = Number(countRes?.count || 0);
     const totalPages = Math.ceil(total / limit);
 
@@ -37,7 +37,7 @@ contentRoutes.get('/:collection', requireScope('read', 'collection_slug'), async
     const result = await db.selectFrom(`ec_${collection}` as any)
       .selectAll()
       .where('status', '!=', 'deleted')
-      .orderBy('created_at desc')
+      .orderBy('created_at', 'desc')
       .limit(limit)
       .offset(offset)
       .execute();
@@ -64,7 +64,7 @@ contentRoutes.get('/:collection/:id', async (c) => {
       .selectAll()
       .where('id', '=', id)
       .executeTakeFirst();
-      
+
     if (!result) return apiResponse.error(c, 'Document not found', 404);
     return apiResponse.ok(c, result);
   } catch (e) {
@@ -72,37 +72,6 @@ contentRoutes.get('/:collection/:id', async (c) => {
   }
 });
 
-async function ensureUniqueSlug(
-  db: any, 
-  collectionName: string, 
-  baseSlug: string, 
-  excludeId?: string
-): Promise<string> {
-  let slug = baseSlug;
-  let counter = 0;
-  let exists = true;
-
-  while (exists) {
-    const currentSlug = counter === 0 ? slug : `${slug}-${counter}`;
-    let query = db.selectFrom(`ec_${collectionName}`)
-      .select('id')
-      .where('slug', '=', currentSlug)
-      .where('status', '!=', 'deleted');
-    
-    if (excludeId) {
-      query = query.where('id', '!=', excludeId);
-    }
-
-    const collision = await query.executeTakeFirst();
-
-    if (!collision) {
-      return currentSlug;
-    }
-    counter++;
-    if (counter > 100) break; // Safety break
-  }
-  return `${slug}-${Math.random().toString(36).substring(2, 7)}`;
-}
 
 contentRoutes.post('/:collection', async (c) => {
   const collectionName = c.req.param('collection');
@@ -113,7 +82,7 @@ contentRoutes.post('/:collection', async (c) => {
     .select('id')
     .where('slug', '=', collectionName)
     .executeTakeFirst();
-    
+
   if (!collection) return apiResponse.error(c, 'Collection not found', 404);
 
   // 2. Check for fields
@@ -140,10 +109,10 @@ contentRoutes.post('/:collection', async (c) => {
   const slug = await ensureUniqueSlug(db, collectionName, baseSlug);
   const status = data.status || 'draft';
 
-  const doc = { 
-    ...data, 
-    id, 
-    slug, 
+  const doc = {
+    ...data,
+    id,
+    slug,
     status,
   };
 
@@ -175,7 +144,7 @@ contentRoutes.put('/:collection/:id', async (c) => {
     const uniqueSlug = await ensureUniqueSlug(db, collectionName, data.slug, id);
     finalData.slug = uniqueSlug;
   }
-  
+
   try {
     await db.updateTable(`ec_${collectionName}` as any)
       .set({
@@ -194,7 +163,7 @@ contentRoutes.delete('/:collection/:id', async (c) => {
   const collectionName = c.req.param('collection');
   const id = c.req.param('id');
   const db = createDb(c.env.DB);
-  
+
   try {
     await db.deleteFrom(`ec_${collectionName}` as any)
       .where('id', '=', id)

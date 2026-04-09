@@ -26,11 +26,14 @@ describe("Device Authorization Flow (RFC 8628)", () => {
     }, env);
 
     expect(res.status).toBe(200);
-    const body = await res.json() as {
-      device_code: string;
-      user_code: string;
-      verification_uri: string;
+    const resBody = await res.json() as {
+      data: {
+        device_code: string;
+        user_code: string;
+        verification_uri: string;
+      }
     };
+    const body = resBody.data;
 
     expect(body.device_code).toBeDefined();
     expect(body.user_code).toBeDefined();
@@ -45,9 +48,10 @@ describe("Device Authorization Flow (RFC 8628)", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ client_id: "test-client" })
     }, env);
-    const { device_code } = await codeRes.json() as {
-      device_code: string;
+    const codeBody = await codeRes.json() as {
+      data: { device_code: string; }
     };
+    const { device_code } = codeBody.data;
 
     // 2. Poll Token
     const tokenRes = await app.request("http://localhost/api/device/token", {
@@ -70,10 +74,10 @@ describe("Device Authorization Flow (RFC 8628)", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ client_id: "test-client" })
     }, env);
-    const { device_code, user_code } = await codeRes.json() as {
-      device_code: string;
-      user_code: string;
+    const codeBody = await codeRes.json() as {
+      data: { device_code: string; user_code: string; }
     };
+    const { device_code, user_code } = codeBody.data;
 
     // 2. Mock complete user login
     const loginRes = await app.request("http://localhost/api/auth/login", {
@@ -105,11 +109,14 @@ describe("Device Authorization Flow (RFC 8628)", () => {
     }, env);
 
     expect(tokenRes.status).toBe(200);
-    const tokenData = await tokenRes.json() as {
-      access_token: string;
-      token_type: string;
-      scope: string;
+    const resBody = await tokenRes.json() as {
+      data: {
+        access_token: string;
+        token_type: string;
+        scope: string;
+      }
     };
+    const tokenData = resBody.data;
 
     expect(tokenData.access_token).toBeDefined();
     expect(tokenData.access_token).toStartWith("ec_pat_");

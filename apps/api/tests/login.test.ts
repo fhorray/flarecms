@@ -60,8 +60,8 @@ describe("Login Endpoints", () => {
     }, env);
 
     expect(res.status).toBe(200);
-    const body = await res.json() as { success: boolean };
-    expect(body.success).toBe(true);
+    const body = await res.json() as { data: { success: boolean } };
+    expect(body.data.success).toBe(true);
 
     // Cookie session
     const setCookie = res.headers.get("Set-Cookie") || "";

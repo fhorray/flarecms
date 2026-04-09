@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
-import { createDb } from '@flare/db';
-import { verifyPassword, hashPassword, generateSessionToken } from '@flare/auth';
+import { createDb } from 'flarecms/db';
+import { verifyPassword, hashPassword, generateSessionToken } from 'flarecms/auth';
 import { ulid } from 'ulidx';
 import { loginSchema, signupSchema, webauthnVerifySchema } from '../schemas';
 import {
@@ -109,7 +109,7 @@ authRoutes.post('/signup', async (c) => {
   setCookie(c, 'session', sessionId, {
     httpOnly: true,
     secure: true,
-    sameSite: 'Strict',
+    sameSite: 'Lax',
     expires: expiresAt,
     path: '/'
   });
@@ -256,7 +256,7 @@ authRoutes.post('/login', async (c) => {
   setCookie(c, 'session', sessionId, {
     httpOnly: true,
     secure: true, // Always secure for simplicity in workers
-    sameSite: 'Strict',
+    sameSite: 'Lax',
     expires: expiresAt,
     path: '/'
   });
@@ -363,7 +363,7 @@ authRoutes.post('/passkey/verify', async (c) => {
     setCookie(c, 'session', sessionId, {
       httpOnly: true,
       secure: true,
-      sameSite: 'Strict',
+      sameSite: 'Lax',
       expires: expiresAt,
       path: '/'
     });

@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
-import { createDb } from '@flare/db';
-import { generateSessionToken } from '@flare/auth';
+import { createDb } from 'flarecms/db';
+import { generateSessionToken } from 'flarecms/auth';
 import { setCookie } from 'hono/cookie';
 import { oauthCallbackSchema } from '../schemas/auth';
 import { ulid } from 'ulidx';

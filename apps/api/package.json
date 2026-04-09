@@ -11,13 +11,12 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@flare/auth": "workspace:*",
-    "@flare/db": "workspace:*",
+    "flarecms": "workspace:*",
+    "@oslojs/encoding": "^1.1.0",
     "@simplewebauthn/server": "^13.3.0",
     "hono": "^4.6.0",
     "kysely": "^0.28.15",
     "ulidx": "^2.4.1",
-    "@oslojs/encoding": "^1.1.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

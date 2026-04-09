@@ -1,6 +1,6 @@
 import type { Context, Next } from 'hono';
 import { getCookie } from 'hono/cookie';
-import { createDb } from '@flare/db';
+import { createDb } from 'flarecms/db';
 
 export const authMiddleware = async (c: Context, next: Next) => {
   const path = c.req.path;

@@ -34,8 +34,8 @@ describe("WebAuthn / Passkeys Setup & Login", () => {
     // Maybe we can add a 'GET /api/setup/init' or just use the DB directly in test.
 
     // For now, let's manually run migrations in the test setup
-    const { runMigrations } = await import("@flare/db");
-    const { createDb } = await import("@flare/db");
+    const { runMigrations } = await import("flarecms/db");
+    const { createDb } = await import("flarecms/db");
     await runMigrations(createDb(db));
 
     const res = await app.request("http://localhost/api/setup/passkey/options", {
@@ -45,14 +45,16 @@ describe("WebAuthn / Passkeys Setup & Login", () => {
     }, env);
 
     expect(res.status).toBe(200);
-    const body = await res.json() as {
-      rp: any;
-      user: {
-        name: string;
-
-      };
-      challenge: string;
+    const resBody = await res.json() as {
+      data: {
+        rp: any;
+        user: {
+          name: string;
+        };
+        challenge: string;
+      }
     };
+    const body = resBody.data;
 
     // SimpleWebAuthn outputs
     expect(body.rp).toBeDefined();

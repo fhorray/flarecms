@@ -1,7 +1,7 @@
 import { describe, expect, test, beforeEach } from "bun:test";
 import { createMockD1 } from "./mock-d1";
 import app from "../src/index";
-import { createDb } from "@flare/db";
+import { createDb } from "flarecms/db";
 import { ulid } from "ulidx";
 
 describe("RBAC and Scopes", () => {

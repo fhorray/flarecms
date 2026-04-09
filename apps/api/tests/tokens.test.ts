@@ -42,7 +42,8 @@ describe("API Token (PAT) Verification", () => {
     }, env);
 
     expect(createRes.status).toBe(200);
-    const { token } = await createRes.json() as { token: string };
+    const createBody = await createRes.json() as { data: { token: string } };
+    const { token } = createBody.data;
     expect(token).toContain("ec_pat_");
 
     // 2. Use Token to access protected route
@@ -64,7 +65,8 @@ describe("API Token (PAT) Verification", () => {
       body: JSON.stringify({ name: "My Token", scopes: ["*"] })
     }, env);
 
-    const { token } = await createRes.json() as { token: string };
+    const rejectBody = await createRes.json() as { data: { token: string } };
+    const { token } = rejectBody.data;
     const parts = token.split("_");
     const tamperedToken = `${parts[0]}_${parts[1]}_${parts[2]}tampered`; // Assuming format ec_pat_ID_SECRET
 
@@ -74,8 +76,8 @@ describe("API Token (PAT) Verification", () => {
     }, env);
 
     expect(accessRes.status).toBe(401);
-    const body = await accessRes.json() as { error: string };
-    expect(body.error).toBe("Invalid API Token");
+    const errorBody = await accessRes.json() as { error: string };
+    expect(errorBody.error).toBe("Invalid API Token");
   });
 
   test("Tokens: Reject non-existent PAT ID", async () => {
@@ -99,7 +101,8 @@ describe("API Token (PAT) Verification", () => {
       body: JSON.stringify({ name: "To Revoke", scopes: ["*"] })
     }, env);
 
-    const { token, id } = await createRes.json() as { token: string, id: string };
+    const revokedBody = await createRes.json() as { data: { token: string, id: string } };
+    const { token, id } = revokedBody.data;
 
     // 2. Verify it works
     const firstRes = await app.request("http://localhost/api/collections", {

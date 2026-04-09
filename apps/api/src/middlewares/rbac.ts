@@ -1,5 +1,5 @@
 import type { Context, Next } from 'hono';
-import { createDb } from '@flare/db';
+import { createDb } from 'flarecms/db';
 
 /**
  * Ensures the authenticated user has one of the allowed roles.

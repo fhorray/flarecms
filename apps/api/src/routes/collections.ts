@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { createDb, createCollectionTable, addFieldToTable } from '@flare/db';
+import { createDb, createCollectionTable, addFieldToTable } from 'flarecms/db';
 import { sql } from 'kysely';
 import { ulid } from 'ulidx';
 import { collectionSchema, fieldSchema } from '../schemas';

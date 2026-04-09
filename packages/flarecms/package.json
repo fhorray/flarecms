@@ -1,0 +1,31 @@
+{
+  "name": "flarecms",
+  "version": "0.0.0",
+  "description": "Unified FlareCMS core package (Auth, DB, CLI)",
+  "type": "module",
+  "main": "./src/index.ts",
+  "bin": {
+    "flarecms": "./src/cli/index.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./auth": "./src/auth/index.ts",
+    "./db": "./src/db/index.ts",
+    "./cli": "./src/cli/index.ts"
+  },
+  "dependencies": {
+    "@oslojs/crypto": "^1.0.1",
+    "@oslojs/encoding": "^1.1.0",
+    "kysely": "^0.28.15",
+    "kysely-d1": "^0.4.0",
+    "ulidx": "^2.4.1",
+    "zod": "^4.3.6",
+    "@clack/prompts": "^0.7.0",
+    "giget": "^3.2.0",
+    "picocolors": "^1.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241022.0",
+    "@types/node": "^20.0.0"
+  }
+}

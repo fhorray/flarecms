@@ -35,3 +35,36 @@ export async function addFieldToTable(db: FlareDb, collectionSlug: string, field
   
   await sql.raw(`ALTER TABLE ${tableName} ADD COLUMN ${fieldSlug} ${columnType}`).execute(db);
 }
+
+export async function ensureUniqueSlug(
+  db: FlareDb, 
+  collectionName: string, 
+  baseSlug: string, 
+  excludeId?: string
+): Promise<string> {
+  let slug = baseSlug;
+  let counter = 0;
+  let exists = true;
+
+  while (exists) {
+    const currentSlug = counter === 0 ? slug : `${slug}-${counter}`;
+    let query = db.selectFrom(`ec_${collectionName}` as any)
+      .select('id')
+      .where('slug', '=', currentSlug)
+      .where('status', '!=', 'deleted');
+    
+    if (excludeId) {
+      query = query.where('id', '!=', (excludeId as any));
+    }
+
+    const collision = await query.executeTakeFirst();
+
+    if (!collision) {
+      return currentSlug;
+    }
+    counter++;
+    if (counter > 100) break; // Safety break
+  }
+  return `${slug}-${Math.random().toString(36).substring(2, 7)}`;
+}
+

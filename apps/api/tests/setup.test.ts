@@ -23,8 +23,8 @@ describe("Setup Endpoints", () => {
     }, env);
 
     expect(res.status).toBe(200);
-    const body = await res.json() as { success: boolean };
-    expect(body.success).toBe(true);
+    const body = await res.json() as { data: { success: boolean } };
+    expect(body.data.success).toBe(true);
 
     // Verify tables exist
     const optionsTable = await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='options'").first();
@@ -58,9 +58,9 @@ describe("Setup Endpoints", () => {
       body: JSON.stringify({ title: "CMS", email: "test2@example.com", password: "pwd123456" })
     }, env);
 
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(403);
     const body = await res.json() as { error: string };
-    expect(body.error).toBe("Setup already complete");
+    expect(body.error).toBe("System is already configured");
   });
 
   test("POST /api/setup validates input with Zod", async () => {
