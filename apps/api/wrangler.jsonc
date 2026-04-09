@@ -6,7 +6,7 @@
     {
       "binding": "DB",
       "database_name": "flarecms-db",
-      "database_id": "9c53eb9a-aaae-429b-888d-921877f654cf",
+      "database_id": "ace400b6-4220-4f49-b441-945cc9ac639f",
       "migrations_dir": "../../packages/db/drizzle"
     }
   ],

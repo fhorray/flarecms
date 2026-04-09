@@ -24,10 +24,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { CollectionModal } from '@/components/collection-modal';
+import { Icon } from '@/components/ui/icon-picker';
 
 export function CollectionsPage() {
   const { data: collections, loading } = useStore($collections);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredCollections = collections?.filter(
@@ -52,14 +52,15 @@ export function CollectionsPage() {
           </h1>
         </div>
 
-        <Button
-          size="sm"
-          className="font-semibold h-9 px-6 text-xs"
-          onClick={() => setIsModalOpen(true)}
-        >
-          <PlusIcon className="size-3.5 mr-2" />
-          New Collection
-        </Button>
+        <CollectionModal>
+          <Button
+            size="sm"
+            className="font-semibold h-9 px-6 text-xs"
+          >
+            <PlusIcon className="size-3.5 mr-2" />
+            New Collection
+          </Button>
+        </CollectionModal>
       </header>
 
       {/* Action Bar */}
@@ -79,7 +80,7 @@ export function CollectionsPage() {
       </div>
 
       {/* Main Table */}
-      <Card className="shadow-none border-border overflow-hidden">
+      <Card className="py-0 shadow-none border-border overflow-hidden">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -103,7 +104,7 @@ export function CollectionsPage() {
                     <TableCell className="pl-8 py-5">
                       <div className="flex items-center gap-4">
                         <div className="size-10 rounded bg-muted flex items-center justify-center border group-hover:bg-primary/5 group-hover:text-primary transition-colors">
-                          <DatabaseIcon className="size-5 opacity-40 group-hover:opacity-100" />
+                          <Icon name={col.icon as any} className="size-5 opacity-40 group-hover:opacity-100" />
                         </div>
                         <div className="flex flex-col gap-0.5">
                           <span
@@ -161,7 +162,7 @@ export function CollectionsPage() {
                   >
                     <DatabaseIcon className="size-12 mx-auto mb-4 opacity-5" />
                     <p className="text-sm font-bold uppercase tracking-[0.2em]">
-                      Deployment Empty
+                      No collection found
                     </p>
                     <p className="text-[10px] mt-1 font-medium">
                       Create your first data collection to begin.
@@ -174,10 +175,6 @@ export function CollectionsPage() {
         </CardContent>
       </Card>
 
-      <CollectionModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
     </div>
   );
 }

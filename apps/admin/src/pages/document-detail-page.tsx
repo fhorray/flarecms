@@ -11,12 +11,14 @@ import {
   Sparkles as SparklesIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 export function DocumentDetailPage() {
   const page = useStore($router);
   const { data: schema, loading: schemaLoading } = useStore($schema);
   const [document, setDocument] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const slug = (page as any).params.slug;
   const id = (page as any).params.id;
@@ -38,10 +40,13 @@ export function DocumentDetailPage() {
     setLoading(true);
     try {
       const response = await apiFetch(`/api/content/${slug}/${id}`);
-      const json = await response.json();
-      setDocument(json.data);
+      if (response.ok) {
+        const result = await response.json();
+        setDocument(result.data);
+      }
     } catch (err) {
       console.error(err);
+      toast.error('Failed to load document structure');
     } finally {
       setLoading(false);
     }
@@ -52,19 +57,34 @@ export function DocumentDetailPage() {
   }, [slug, id]);
 
   const handleSubmit = async (data: any) => {
+    setIsSubmitting(true);
     try {
       const method = id === 'new' ? 'POST' : 'PUT';
       const url =
         id === 'new' ? `/api/content/${slug}` : `/api/content/${slug}/${id}`;
 
-      await apiFetch(url, {
+      const response = await apiFetch(url, {
         method,
         body: JSON.stringify(data),
       });
 
-      $router.open(`/${slug}`);
-    } catch (err) {
+      const result = await response.json();
+
+      if (response.ok) {
+        toast.success(id === 'new' ? 'Document deployed' : 'Fragment updated');
+        if (id === 'new' && result.data.id) {
+          $router.open(`/${slug}/${result.data.id}`);
+        } else {
+          $router.open(`/${slug}`);
+        }
+      } else {
+        toast.error(result.error || 'Operation failed');
+      }
+    } catch (err: any) {
       console.error(err);
+      toast.error(err.message || 'Verification error encountered');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -97,11 +117,11 @@ export function DocumentDetailPage() {
               Document Processing
             </span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground leading-none">
-            {id === 'new'
-              ? `New ${schema?.labelSingular || 'Document'}`
-              : `Edit ${schema?.labelSingular || 'Document'}`}
-          </h1>
+          <h2 className="text-sm font-bold tracking-tight text-foreground leading-none">
+            {!id
+              ? `New ${schema?.label_singular || 'Document'}`
+              : `Edit ${schema?.label_singular || 'Document'}`}
+          </h2>
         </div>
       </header>
 
@@ -110,13 +130,9 @@ export function DocumentDetailPage() {
           slug={slug}
           initialData={document}
           onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
           onCancel={() => $router.open(`/${slug}`)}
         />
-      </div>
-
-      <div className="flex items-center gap-2 px-1 text-[10px] font-bold text-muted-foreground/30 uppercase tracking-[0.2em]">
-        <DatabaseIcon className="size-3" />
-        <span>Flare Persistence Layer v2</span>
       </div>
     </div>
   );

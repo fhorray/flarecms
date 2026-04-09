@@ -8,18 +8,21 @@
     "deploy": "wrangler deploy",
     "db:push": "wrangler d1 migrations apply flarecms --remote",
     "db:local": "wrangler d1 migrations apply flarecms --local",
-    "db:migrate": "bun --cwd ../../packages/db generate",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@flare/auth": "workspace:*",
     "@flare/db": "workspace:*",
-    "drizzle-orm": "^0.45.2",
+    "@simplewebauthn/server": "^13.3.0",
     "hono": "^4.6.0",
-    "ulidx": "^2.4.1"
+    "kysely": "^0.28.15",
+    "ulidx": "^2.4.1",
+    "@oslojs/encoding": "^1.1.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
-    "wrangler": "^4.81.0",
-    "@cloudflare/workers-types": "^4.20241022.0"
+    "@cloudflare/workers-types": "^4.20241022.0",
+    "drizzle-orm": "^0.45.2",
+    "wrangler": "^4.81.0"
   }
 }

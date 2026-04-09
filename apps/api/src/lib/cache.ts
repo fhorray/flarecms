@@ -4,6 +4,9 @@ export interface SchemaCache {
   id: string;
   slug: string;
   label: string;
+  is_public: number;
+  features: string[];
+  url_pattern: string | null;
   fields: any[];
 }
 

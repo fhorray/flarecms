@@ -19,14 +19,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 interface FieldModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  children: React.ReactElement;
   collectionId: string;
   collectionSlug: string;
 }
@@ -48,11 +48,11 @@ const FIELD_TYPES = [
 ] as const;
 
 export function FieldModal({
-  isOpen,
-  onClose,
+  children,
   collectionId,
   collectionSlug,
 }: FieldModalProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<Field>>({
     label: '',
     slug: '',
@@ -70,7 +70,7 @@ export function FieldModal({
         collectionId,
         collectionSlug,
       });
-      onClose();
+      setIsOpen(false);
       setFormData({ label: '', slug: '', type: 'text', required: false });
     } catch (err) {
       console.error(err);
@@ -78,7 +78,8 @@ export function FieldModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger render={children} />
       <DialogContent className="sm:max-w-[540px] p-0 overflow-hidden border-border bg-background rounded-md shadow-lg">
         <DialogHeader className="px-8 py-8 border-b bg-muted/30">
           <div className="flex items-center gap-4">
@@ -195,7 +196,7 @@ export function FieldModal({
             <Button
               type="button"
               variant="ghost"
-              onClick={onClose}
+              onClick={() => setIsOpen(false)}
               className="text-xs font-semibold text-muted-foreground hover:text-foreground h-10 px-6"
             >
               Discard

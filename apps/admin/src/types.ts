@@ -2,8 +2,13 @@ export interface Collection {
   id: string;
   slug: string;
   label: string;
-  labelSingular: string;
-  createdAt: Date | string;
+  label_singular: string | null;
+  description: string | null;
+  icon: string | null;
+  is_public: number;
+  features: string[];
+  url_pattern: string | null;
+  createdAt: string;
 }
 
 export interface Field {
@@ -13,7 +18,7 @@ export interface Field {
   slug: string;
   type: 'text' | 'richtext' | 'number' | 'boolean' | 'date';
   required: boolean;
-  createdAt: Date | string;
+  createdAt: string;
 }
 
 export interface CollectionSchema extends Collection {

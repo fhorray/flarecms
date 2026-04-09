@@ -3,15 +3,13 @@ import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar"
 
 import { cn } from "@/lib/utils"
 
-function Avatar({
-  className,
-  size = "default",
-  ...props
-}: AvatarPrimitive.Root.Props & {
-  size?: "default" | "sm" | "lg"
-}) {
+const Avatar = React.forwardRef<
+  HTMLDivElement,
+  AvatarPrimitive.Root.Props & { size?: "default" | "sm" | "lg" }
+>(({ className, size = "default", ...props }, ref) => {
   return (
     <AvatarPrimitive.Root
+      ref={ref}
       data-slot="avatar"
       data-size={size}
       className={cn(
@@ -21,7 +19,9 @@ function Avatar({
       {...props}
     />
   )
-}
+})
+
+Avatar.displayName = "Avatar"
 
 function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
   return (

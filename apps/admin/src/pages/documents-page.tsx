@@ -25,6 +25,8 @@ export function DocumentsPage() {
 
   if (loading) return null;
 
+  const hasFields = schema?.fields && schema.fields.length > 0;
+
   return (
     <div className="p-6 max-w-container mx-auto space-y-8">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-1">
@@ -57,14 +59,39 @@ export function DocumentsPage() {
           </Button>
           <Button
             size="sm"
-            className="font-semibold h-9 px-6 text-xs"
+            disabled={!hasFields}
+            className="font-bold h-9 px-6 text-xs gap-2 shadow-sm"
             onClick={() => $router.open(`/${slug}/new`)}
           >
-            <PlusIcon className="size-3.5 mr-2" />
+            <PlusIcon className="size-3.5" />
             New Document
           </Button>
         </div>
       </header>
+
+      {!hasFields && (
+        <div className="p-8 border-2 border-dashed border-primary/20 bg-primary/5 rounded-xl animate-in fade-in slide-in-from-top-4 duration-500">
+           <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+              <div className="size-12 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shrink-0">
+                 <SettingsIcon className="size-6" />
+              </div>
+              <div className="flex-1 space-y-1">
+                 <h3 className="text-sm font-bold uppercase tracking-widest text-primary">Immutable Data Structure</h3>
+                 <p className="text-xs text-muted-foreground font-medium leading-relaxed">
+                    This collection is currently defined with zero fields. In order to begin populating data, you must first initialize your schema definitions in the structural configuration panel.
+                 </p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-9 px-6 text-[10px] font-black uppercase tracking-widest border-primary/20 hover:bg-primary/10 hover:text-primary transition-colors"
+                onClick={() => $router.open(`/collection/${schema?.id}/${slug}`)}
+              >
+                Launch Builder
+              </Button>
+           </div>
+        </div>
+      )}
 
       <ContentList slug={slug} />
     </div>

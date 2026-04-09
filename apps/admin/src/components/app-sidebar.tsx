@@ -28,15 +28,26 @@ import { $router } from '@/store/router';
 import { useStore } from '@nanostores/react';
 import { $auth, logout } from '@/store/auth';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipTrigger 
+} from '@/components/ui/tooltip';
+import { useSidebar } from '@/components/ui/sidebar';
+
+import { $settings } from '@/store/settings';
 
 import {
   Collapsible,
+
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { ChevronRight } from 'lucide-react';
 
 import { $collections } from '@/store/collections';
+
+import { Icon } from '@/components/ui/icon-picker';
 
 interface AppSidebarProps {
   variant?: 'sidebar' | 'floating' | 'inset';
@@ -45,6 +56,7 @@ interface AppSidebarProps {
 export function AppSidebar({ variant = 'sidebar' }: AppSidebarProps) {
   const page = useStore($router);
   const auth = useStore($auth);
+  const settings = useStore($settings);
   const { data: collections } = useStore($collections);
 
   const menuGroups = [
@@ -52,7 +64,7 @@ export function AppSidebar({ variant = 'sidebar' }: AppSidebarProps) {
       label: 'Content',
       items: (collections || []).map((col) => ({
         label: col.label,
-        icon: col.slug === 'pages' ? FileTextIcon : DatabaseIcon,
+        icon: col.slug === 'pages' ? FileTextIcon : () => <Icon name={col.icon as any} />,
         route: `/${col.slug}`,
       })),
     },
@@ -88,16 +100,21 @@ export function AppSidebar({ variant = 'sidebar' }: AppSidebarProps) {
 
   return (
     <Sidebar collapsible="icon" variant={variant}>
-      <SidebarHeader className="flex flex-row items-center px-4 py-6 gap-3">
-        <div className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground shrink-0 shadow-sm">
-          <SparklesIcon className="size-4" />
-        </div>
+      <SidebarHeader className="flex flex-row items-center px-4 py-6 gap-3 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center transition-[padding,justify-content]">
+        <Tooltip>
+          <TooltipTrigger render={<div className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground shrink-0 shadow-sm cursor-pointer" />}>
+              <SparklesIcon className="size-4" />
+          </TooltipTrigger>
+          <TooltipContent side="right" className="group-data-[collapsible=expanded]:hidden">
+            {settings['flare:site_title'] || 'FlareCMS'}
+          </TooltipContent>
+        </Tooltip>
         <div className="flex flex-col gap-0.5 group-data-[collapsible=icon]:hidden">
           <span className="font-semibold text-sidebar-foreground tracking-tight leading-none">
-            FlareCMS
+            {settings['flare:site_title'] || 'FlareCMS'}
           </span>
           <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-            Management
+            {settings['flare:site_tagline'] || 'Management'}
           </span>
         </div>
       </SidebarHeader>
@@ -159,14 +176,20 @@ export function AppSidebar({ variant = 'sidebar' }: AppSidebarProps) {
         ))}
       </SidebarContent>
 
-      <SidebarFooter className="p-4">
-        <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
-          <Avatar className="size-8 rounded-lg">
-            <AvatarFallback className="text-[10px] font-semibold">
-              {auth.user?.email.substring(0, 2).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 overflow-hidden group-data-[collapsible=icon]:hidden">
+      <SidebarFooter className="p-4 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-4 transition-[padding]">
+        <div className="flex items-center gap-3 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:gap-4">
+          <Tooltip>
+            <TooltipTrigger render={<Avatar className="size-8 rounded-lg shrink-0 cursor-pointer" />}>
+                <AvatarFallback className="text-[10px] font-semibold">
+                  {auth.user?.email.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="group-data-[collapsible=expanded]:hidden">
+              {auth.user?.email}
+            </TooltipContent>
+          </Tooltip>
+
+          <div className="flex-1 min-w-0 overflow-hidden group-data-[collapsible=icon]:hidden">
             <p className="text-xs font-medium truncate leading-none mb-1 text-sidebar-foreground">
               {auth.user?.email.split('@')[0]}
             </p>
@@ -177,10 +200,24 @@ export function AppSidebar({ variant = 'sidebar' }: AppSidebarProps) {
               Sign out
             </button>
           </div>
-          <LogOutIcon
-            className="size-4 text-muted-foreground/50 hover:text-destructive cursor-pointer group-data-[collapsible=icon]:hidden transition-colors"
-            onClick={() => logout()}
-          />
+
+          <SidebarMenu className="w-fit group-data-[collapsible=expanded]:block hidden">
+             <SidebarMenuItem>
+                <SidebarMenuButton size="sm" onClick={() => logout()} tooltip="Sign out" className="text-muted-foreground/50 hover:text-destructive">
+                   <LogOutIcon />
+                </SidebarMenuButton>
+             </SidebarMenuItem>
+          </SidebarMenu>
+
+          <div className="group-data-[collapsible=icon]:block hidden">
+             <SidebarMenu>
+                <SidebarMenuItem>
+                   <SidebarMenuButton size="sm" onClick={() => logout()} tooltip="Sign out" className="text-muted-foreground/50 hover:text-destructive">
+                      <LogOutIcon />
+                   </SidebarMenuButton>
+                </SidebarMenuItem>
+             </SidebarMenu>
+          </div>
         </div>
       </SidebarFooter>
       <SidebarRail />

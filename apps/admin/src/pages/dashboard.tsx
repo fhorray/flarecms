@@ -18,7 +18,6 @@ import {
 
 export function DashboardPage() {
   const { data: collections, loading } = useStore($collections);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
     <div className="p-6 max-w-container mx-auto space-y-8">
@@ -30,15 +29,16 @@ export function DashboardPage() {
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-9 gap-2 text-xs font-semibold"
-            onClick={() => $router.open('/collection')}
-          >
-            <PlusIcon className="size-3.5" />
-            Collection
-          </Button>
+          <CollectionModal>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 gap-2 text-xs font-semibold"
+            >
+              <PlusIcon className="size-3.5" />
+              Collection
+            </Button>
+          </CollectionModal>
 
           <Button
             variant="outline"
@@ -66,7 +66,7 @@ export function DashboardPage() {
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: Content */}
-        <Card className="lg:col-span-12 xl:col-span-7 shadow-none border-border overflow-hidden">
+        <Card className="py-0 lg:col-span-12 xl:col-span-7 shadow-none border-border overflow-hidden">
           <CardHeader className="bg-muted/10 border-b py-4 px-6">
             <CardTitle className="text-sm font-semibold">Content</CardTitle>
           </CardHeader>
@@ -111,7 +111,7 @@ export function DashboardPage() {
         </Card>
 
         {/* Right Column: Activity */}
-        <Card className="lg:col-span-12 xl:col-span-5 shadow-none border-border overflow-hidden">
+        <Card className="py-0 lg:col-span-12 xl:col-span-5 shadow-none border-border overflow-hidden">
           <CardHeader className="bg-muted/10 border-b py-4 px-6">
             <CardTitle className="text-sm font-semibold">
               Recent Activity
@@ -128,10 +128,6 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      <CollectionModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
     </div>
   );
 }

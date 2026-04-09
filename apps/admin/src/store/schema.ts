@@ -23,6 +23,17 @@ export const $addField = createMutatorStore<Partial<Field> & { collectionSlug: s
     
     // Invalidate the schema cache
     invalidate(`/api/collections/${collectionSlug}/schema`); 
-    return response.json();
+    const result = await response.json();
+    return result.data;
   }
 );
+
+export const $reloadSchema = () => {
+  const slug = $activeSlug.get();
+  if (slug) {
+    // We can't easily invalidate from here without the invalidate function from mutate
+    // But we can trigger a refresh by setting active slug to null and back
+    $activeSlug.set(null);
+    setTimeout(() => $activeSlug.set(slug), 10);
+  }
+};

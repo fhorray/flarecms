@@ -42,11 +42,14 @@ bun run dev
 
 Inspired by modern CMS best practices and enterprise-grade research, FlareCMS is evolving to support:
 
+- **[x] WebAuthn / Passkeys**: Biometric authentication implemented as a stable, passwordless login method.
+- **[x] Automated Deployment Pipeline**: Integrated custom build & deploy orchestration for Cloudflare Workers.
+- **[x] Self-Healing Database**: Automatic runtime migrations and table initialization.
+- **[x] Production Routing**: Native SPA fallback handling for seamless page refreshes at the edge.
 - **[ ] MCP Server Integration**: Full support for the Model Context Protocol to allow AI Agents (Claude, ChatGPT) to manage content, schemas, and mediaLibrary programmatically.
 - **[ ] Portable Text Protocol**: Transitioning from HTML-based storage to structured JSON (Portable Text) for presentation-agnostic content delivery.
 - **[ ] Agentic Developer Skills**: Native skills and instructions to turn FlareCMS into an "autonomous" CMS that can build its own plugins via AI.
 - **[ ] Edge Worker Sandboxing**: A plugin system based on isolated Cloudflare Workers for secure, third-party extensibility.
-- **[ ] WebAuthn / Passkeys**: Moving towards a passwordless future with biometric authentication as the primary login method.
 
 ---
 

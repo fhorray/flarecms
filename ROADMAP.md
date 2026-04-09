@@ -7,17 +7,20 @@ This document outlines the strategic implementation path for FlareCMS features, 
 | Feature | FlareCMS Status | Strategic Priority |
 | :--- | :--- | :--- |
 | **Edge-Native Architecture** | ✅ (Bun/D1) | High |
+| **Passkey/WebAuthn Login** | ✅ (Stable) | High |
+| **Standardized API Response** | ✅ ({data, meta}) | High |
+| **Automated Deployments** | ✅ (Turbo/Bun) | High |
 | **Flat, Minimalist UI** | 🚀 (Elite) | Elite |
 | **Zero-Animation Speed** | 🚀 (Elite) | Elite |
+| **Auto-Slug Uniqueness** | ✅ (Smart) | Medium |
 | **MCP Server (AI Protocol)** | ❌ Planned | **Urgent** |
 | **Repeater Fields** | ❌ Planned | **High** |
 | **Auto-Redirect System** | ❌ Planned | Medium |
 | **Portable Text (JSON)** | ❌ Planned | Medium |
-| **Passkey/WebAuthn Login** | ❌ Planned | Medium |
 | **Sandboxed Plugin SDK** | ❌ Planned | Long-term |
 | **Multi-Byline Authorship** | ❌ Planned | Low |
 
-## 🔍 Missing Feature Deep-Dive
+## 🔍 Strategic Feature Deep-Dive
 
 ### 1. Model Context Protocol (MCP) Server
 **Concept**: Allow AI agents (like those in Cursor, Claude, or ChatGPT) to interact with the CMS data model directly.
@@ -42,17 +45,21 @@ This document outlines the strategic implementation path for FlareCMS features, 
 ## 🚀 Implementation Phases
 
 ### Phase 1: The "Agentic" Era (Immediate)
+- **[x] Unified Response Schema**: Implemented global `{ data, meta }` unwrapping and pagination.
+- **[x] Self-Healing Infrastructure**: Automatic database migrations and table initialization during setup.
+- **[x] Production-Ready Routing**: SPA fallback support for Cloudflare Workers (refresh fix).
+- **[x] Automated Pipeline**: Custom `deploy.ts` for full-stack build and deployment orchestration.
 - **[ ] MCP Implementation**: Expose `content` and `schema` tools via MCP.
 - **[ ] Flare-Agent-Skills**: Native pre-defined instructions for AI coding assistants.
-- **[ ] Audit Logs**: Detailed tracking of all platform and content changes.
+- **[x] Audit Logs (Lite)**: Collection Intelligence and System Activity Log (Mocked/Experimental).
 
 ### Phase 2: Content Maturity (Next)
 - **[ ] Repeater Fields**: Support for complex, nested content structures.
 - **[ ] Portable Text Storage**: Transitioning to structured JSON for perfect machine readability.
-- **[ ] Smart Redirects**: Automatic management of URL changes.
+- **[ ] Smart Redirects**: Automatic management of URL changes (301 history).
 
 ### Phase 3: Scaling & Security (Future)
-- **[ ] Passkey Support**: Biometric authentication as a first-class citizen.
+- **[x] Passkey Support**: Biometric authentication as a first-class citizen (WebAuthn).
 - **[ ] Managed Plugin Isolates**: Safe, worker-based extensibility.
 
 ---

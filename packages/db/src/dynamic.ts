@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { sql } from "kysely";
 import type { FlareDb } from "./index";
 
 export const FIELD_TYPE_MAP: Record<string, string> = {
@@ -15,7 +15,7 @@ export async function createCollectionTable(db: FlareDb, slug: string) {
   
   // Basic content table structure
   // id (ULID), slug, status, created_at, updated_at are standard
-  await db.run(sql.raw(`
+  await sql.raw(`
     CREATE TABLE IF NOT EXISTS ${tableName} (
       id TEXT PRIMARY KEY,
       slug TEXT NOT NULL,
@@ -23,15 +23,15 @@ export async function createCollectionTable(db: FlareDb, slug: string) {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
-  `));
+  `).execute(db);
 
   // Add an index on slug
-  await db.run(sql.raw(`CREATE UNIQUE INDEX IF NOT EXISTS idx_${tableName}_slug ON ${tableName} (slug)`));
+  await sql.raw(`CREATE UNIQUE INDEX IF NOT EXISTS idx_${tableName}_slug ON ${tableName} (slug)`).execute(db);
 }
 
 export async function addFieldToTable(db: FlareDb, collectionSlug: string, fieldSlug: string, type: string) {
   const tableName = `ec_${collectionSlug}`;
   const columnType = FIELD_TYPE_MAP[type] || "TEXT";
   
-  await db.run(sql.raw(`ALTER TABLE ${tableName} ADD COLUMN ${fieldSlug} ${columnType}`));
+  await sql.raw(`ALTER TABLE ${tableName} ADD COLUMN ${fieldSlug} ${columnType}`).execute(db);
 }

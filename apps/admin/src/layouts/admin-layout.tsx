@@ -35,13 +35,17 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
             <div className="flex flex-col">
               <div className="flex items-center gap-2 text-muted-foreground text-[10px] font-medium uppercase tracking-wider leading-none mb-0.5">
-                {page?.route === 'home' ? 'Administration' : page?.route === 'collections' ? 'Infrastructure' : 'Resource'}
+                {page?.route === 'home'
+                  ? 'Administration'
+                  : page?.route === 'collections'
+                    ? 'Infrastructure'
+                    : 'Resource'}
               </div>
               <h2 className="text-foreground font-semibold text-sm tracking-tight capitalize leading-none">
-                {page?.route === 'home' 
-                  ? 'Nexus Dashboard' 
-                  : page?.route === 'collections' 
-                    ? 'Collections Manager' 
+                {page?.route === 'home'
+                  ? 'Dashboard'
+                  : page?.route === 'collections'
+                    ? 'Collections Manager'
                     : page?.route?.replace(/-/g, ' ')}
               </h2>
             </div>
