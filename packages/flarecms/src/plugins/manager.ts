@@ -9,21 +9,15 @@ import type { FlareDb } from '../db/index.js';
  * It coordinates hook execution, route handling, and plugin lifecycle.
  */
 export class PluginManager {
-	private plugins: ResolvedPlugin[] = [];
 	private hookPipeline: HookPipeline;
 	private routeRegistry: PluginRouteRegistry;
-	private db: FlareDb;
-	private siteInfo: { name: string; url: string; locale: string };
 
 	constructor(
-		plugins: ResolvedPlugin[],
-		db: FlareDb,
-		siteInfo: { name: string; url: string; locale: string },
+		public plugins: ResolvedPlugin[],
+		public db: FlareDb,
+		public siteInfo: { name: string; url: string; locale: string },
+		public encryptionSecret?: string
 	) {
-		this.plugins = plugins;
-		this.db = db;
-		this.siteInfo = siteInfo;
-
 		// Initialize sub-systems
 		this.hookPipeline = new HookPipeline(plugins, db, siteInfo);
 		this.routeRegistry = new PluginRouteRegistry(db, siteInfo);
@@ -82,6 +76,7 @@ export class PluginManager {
 			storageCollections: Object.keys(plugin.storage),
 			db: this.db,
 			siteInfo: this.siteInfo,
+			encryptionSecret: this.encryptionSecret,
 		});
 
 		return plugin.admin.handler(interaction, ctx);

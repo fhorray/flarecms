@@ -21,6 +21,7 @@ export interface ContextFactoryOptions {
 	storageCollections: string[];
 	db: FlareDb;
 	siteInfo: { name: string; url: string; locale: string };
+	encryptionSecret?: string;
 }
 
 /**
@@ -234,6 +235,21 @@ export function createPluginContext(options: ContextFactoryOptions): PluginConte
 			},
 		};
 	}
+	
+	// ── Crypto Access ──
+	let crypto: any;
+	if (hasCap('crypto:encrypt')) {
+		crypto = {
+			encrypt: async (text: string) => {
+				if (!options.encryptionSecret) throw new Error('Encryption secret not configured');
+				return await encryptText(text, options.encryptionSecret);
+			},
+			decrypt: async (ciphertext: string) => {
+				if (!options.encryptionSecret) throw new Error('Encryption secret not configured');
+				return await decryptText(ciphertext, options.encryptionSecret);
+			}
+		};
+	}
 
 	// ── Final Context ──
 	return {
@@ -246,6 +262,59 @@ export function createPluginContext(options: ContextFactoryOptions): PluginConte
 		log,
 		site: siteInfo,
 		users,
-		email: undefined, // Implement email bridge later
+		email: undefined,
+		crypto,
 	};
+}
+
+/**
+ * Helper to encrypt text using Web Crypto API
+ */
+async function encryptText(text: string, secret: string): Promise<string> {
+	const enc = new TextEncoder();
+	const key = await globalThis.crypto.subtle.importKey(
+		'raw',
+		enc.encode(secret.padEnd(32, '0').slice(0, 32)),
+		{ name: 'AES-GCM' },
+		false,
+		['encrypt']
+	);
+	const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
+	const encrypted = await globalThis.crypto.subtle.encrypt(
+		{ name: 'AES-GCM', iv },
+		key,
+		enc.encode(text)
+	);
+	
+	const combined = new Uint8Array(iv.length + encrypted.byteLength);
+	combined.set(iv);
+	combined.set(new Uint8Array(encrypted), iv.length);
+	
+	return btoa(String.fromCharCode(...combined));
+}
+
+/**
+ * Helper to decrypt text using Web Crypto API
+ */
+async function decryptText(ciphertext: string, secret: string): Promise<string> {
+	const enc = new TextEncoder();
+	const combined = new Uint8Array(atob(ciphertext).split('').map(c => c.charCodeAt(0)));
+	const iv = combined.slice(0, 12);
+	const data = combined.slice(12);
+	
+	const key = await globalThis.crypto.subtle.importKey(
+		'raw',
+		enc.encode(secret.padEnd(32, '0').slice(0, 32)),
+		{ name: 'AES-GCM' },
+		false,
+		['decrypt']
+	);
+	
+	const decrypted = await globalThis.crypto.subtle.decrypt(
+		{ name: 'AES-GCM', iv },
+		key,
+		data
+	);
+	
+	return new TextDecoder().decode(decrypted);
 }

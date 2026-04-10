@@ -120,19 +120,33 @@ mcpRoutes.post("/execute", async (c) => {
       const slug = await ensureUniqueSlug(db, collectionName, baseSlug);
       const status = docData.status || 'draft';
 
-      const doc = {
+      let doc: Record<string, unknown> & { id: string; slug: string; status: string } = {
         ...docData,
         id,
         slug,
         status,
       };
 
+      // Plugin Hooks: Before Save
+      const pluginManager = c.get('pluginManager');
+      if (pluginManager) {
+        const result = await pluginManager.runContentBeforeSave(doc, collectionName, true);
+        doc = { ...result, id, slug: (result.slug as string) || slug, status: (result.status as string) || status };
+      }
+
       await db.insertInto(`ec_${collectionName}` as any)
         .values(doc)
         .execute();
 
+      // Plugin Hooks: After Save
+      if (pluginManager) {
+        c.executionCtx.waitUntil(
+          pluginManager.runContentAfterSave(doc, collectionName, true)
+        );
+      }
+
       return c.json({
-        content: [{ type: "text", text: `Success: Document created with ID ${id} and slug ${slug}` }]
+        content: [{ type: "text", text: `Success: Document created with ID ${id} and slug ${doc.slug}` }]
       });
     }
 
@@ -148,19 +162,36 @@ mcpRoutes.post("/execute", async (c) => {
       const parsed = dynamicContentSchema.safeParse(data);
       if (!parsed.success) return c.json({ error: parsed.error.format() }, 400);
 
+      const pluginManager = c.get('pluginManager');
+
       // Handle slug change uniqueness
-      let finalData = { ...parsed.data };
-      if (finalData.slug) {
-        finalData.slug = await ensureUniqueSlug(db, collectionName, finalData.slug, id);
+      let docToSave: Record<string, unknown> & { updated_at: any; slug?: string } = {
+        ...parsed.data,
+        updated_at: sql`CURRENT_TIMESTAMP`
+      };
+
+      if (docToSave.slug) {
+        docToSave.slug = await ensureUniqueSlug(db, collectionName, docToSave.slug, id);
+      }
+
+      // Plugin Hooks: Before Save
+      if (pluginManager) {
+        const result = await pluginManager.runContentBeforeSave(docToSave, collectionName, false);
+        docToSave = { ...result, updated_at: (result.updated_at as any) || docToSave.updated_at };
       }
 
       await db.updateTable(`ec_${collectionName}` as any)
-        .set({
-          ...finalData,
-          updated_at: sql`CURRENT_TIMESTAMP`
-        })
+        .set(docToSave)
         .where('id', '=', id)
-        .execute();
+        .execute()
+
+
+      // Plugin Hooks: After Save
+      if (pluginManager) {
+        c.executionCtx.waitUntil(
+          pluginManager.runContentAfterSave(docToSave, collectionName, false)
+        );
+      }
 
       return c.json({
         content: [{ type: "text", text: `Success: Document ${id} updated.` }]

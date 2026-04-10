@@ -14,6 +14,7 @@ export default defineConfig({
     }),
   ],
   build: {
+    target: 'es2022',
     minify: true,
     outDir: 'dist',
     chunkSizeWarningLimit: 1000,
@@ -21,17 +22,15 @@ export default defineConfig({
       output: {
         manualChunks(id: string) {
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('hono')) {
-              return 'vendor';
-            }
-            // Group Lucide icons in blocks to reduce the number of files
+            // Group icons but keep core dependencies together
             if (id.includes('lucide-react/dist/esm/icons')) {
               const iconName = id.split('/').pop()?.split('.')[0] || '';
-              // Group icons by the first letter (ex: index_a, index_b...)
               const group = iconName.charAt(0).toLowerCase();
               return `icons/group_${group}`;
             }
-            return 'deps';
+            if (id.includes('react') || id.includes('hono') || id.includes('nanostores')) {
+              return 'vendor';
+            }
           }
         }
       }

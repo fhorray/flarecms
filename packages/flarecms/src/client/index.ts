@@ -6,3 +6,4 @@ export * from './store/collections';
 export * from './store/router';
 export * from './lib/api';
 export * from './lib/block-registry';
+export * from './lib/utils';

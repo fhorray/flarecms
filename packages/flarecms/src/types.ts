@@ -10,6 +10,7 @@ export type Bindings = {
   KV: KVNamespace;
   ASSETS: Fetcher;
   AUTH_SECRET: string;
+  FLARE_ENCRYPTION_SECRET?: string;
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
   LOADER?: any;

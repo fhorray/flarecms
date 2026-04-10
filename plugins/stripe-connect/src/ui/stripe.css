@@ -1,0 +1,122 @@
+/* 
+  Stripe Connect Plugin - Premium Styles
+  Using standard CSS for maximum compatibility in sandbox environments.
+*/
+
+:root {
+  --stripe-brand: #635bff;
+  --stripe-accent: #a370f7;
+  --stripe-bg-gradient: linear-gradient(135deg, #635bff 0%, #a370f7 100%);
+}
+
+/* Base Utility for Premium Containers */
+.stripe-container {
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Premium Main Card (Hero) */
+.stripe-hero-card {
+  background: var(--stripe-bg-gradient);
+  border-radius: 2.5rem;
+  color: white;
+  padding: 1px; /* Border effect */
+  box-shadow: 0 25px 50px -12px rgba(99, 91, 255, 0.25);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.5s ease;
+}
+
+.stripe-hero-inner {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border-radius: 2.3rem;
+  padding: 2rem;
+  height: 100%;
+  min-height: 20rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Glassmorphism Cards */
+.stripe-glass-card {
+  background: white;
+  border: 1px solid #f4f4f5;
+  border-radius: 2.5rem;
+  padding: 2rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  min-height: 12rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.3s ease;
+}
+
+.stripe-glass-card:hover {
+  border-color: #e4e4e7;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+/* Stats Typography */
+.stripe-stat-label {
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #a1a1aa;
+  margin-bottom: 0.25rem;
+}
+
+.stripe-stat-value {
+  font-size: 2.25rem;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  color: #18181b;
+}
+
+.stripe-hero-card .stripe-stat-value {
+  color: white;
+}
+
+/* Table Enhancements */
+.stripe-table-container {
+  background: white;
+  border-radius: 2.5rem;
+  border: 1px solid #f4f4f5;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  overflow: hidden;
+}
+
+.stripe-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.stripe-table th {
+  padding: 1rem 2rem;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #a1a1aa;
+  background: rgba(250, 250, 250, 0.5);
+  border-bottom: 1px solid #f4f4f5;
+}
+
+.stripe-table td {
+  padding: 1.25rem 2rem;
+  border-bottom: 1px solid #fafafa;
+}
+
+/* Animation Utilities */
+.stripe-animate-pulse {
+  animation: stripe-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes stripe-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}

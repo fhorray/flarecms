@@ -13,7 +13,12 @@ export type PluginCapability =
   | 'network:fetch'
   | 'network:fetch:any'
   | 'read:users'
-  | 'email:send';
+  | 'email:send'
+  | 'crypto:encrypt'
+  | 'storage:read'
+  | 'storage:write'
+  | 'storage:delete'
+  | 'storage:list';
 
 export interface FlarePluginDefinition {
   /**
@@ -90,7 +95,7 @@ export type FlarePlugin = FlarePluginDefinition & {
  */
 export type BlockType =
   | 'header' | 'text' | 'divider' | 'stat' | 'input' | 'textarea' | 'select' | 'toggle'
-  | 'button' | 'button_group' | 'table' | 'alert' | 'card' | 'grid' | 'form';
+  | 'button' | 'button_group' | 'table' | 'alert' | 'card' | 'grid' | 'form' | 'custom';
 
 /**
  * Block interface for the plugin.
@@ -200,6 +205,10 @@ export interface PluginContext {
    * Email access for the plugin.
    */
   email?: PluginEmailAccess;
+  /**
+   * Crypto access for the plugin.
+   */
+  crypto?: PluginCryptoAccess;
 }
 
 /**
@@ -444,6 +453,7 @@ export interface SandboxOptions {
    * Site information for the plugin.
    */
   siteInfo?: { name: string; url: string; locale: string };
+  encryptionSecret?: string;
 }
 
 /**
@@ -625,6 +635,20 @@ export interface PluginEmailAccess {
    * Send an email.
    */
   send(message: { to: string; subject: string; text: string; html?: string }): Promise<void>;
+}
+
+/**
+ * Plugin crypto access for the plugin.
+ */
+export interface PluginCryptoAccess {
+  /**
+   * Encrypt a string using the system's secret key.
+   */
+  encrypt(text: string): Promise<string>;
+  /**
+   * Decrypt a string using the system's secret key.
+   */
+  decrypt(ciphertext: string): Promise<string>;
 }
 
 // ── Request Serialization ──

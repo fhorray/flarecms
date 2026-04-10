@@ -32,9 +32,19 @@ export default definePlugin({
     'network:fetch:any'
   ],
   hooks: {
-    // Trocado de 'content:created' para o hook padrão suportado pela arquitetura
     'content:afterSave': async (event, ctx) => {
       ctx.log.info('ui-kit-tester: content:afterSave hook fired', event);
+      
+      try {
+        const current = await ctx.kv.get('stats:after_save_count');
+        const count = (typeof current === 'number' ? current : 0) + 1;
+        await ctx.kv.set('stats:after_save_count', count);
+        
+        // Also track "last hour" or similar for "change" if desired, 
+        // but for now let's just increment a total.
+      } catch (e) {
+        ctx.log.error('Failed to update stats in KV', e);
+      }
     },
   },
 
@@ -54,9 +64,14 @@ export default definePlugin({
 
         if (widgetId === 'summary') {
           let kvHits = 0;
+          let hookCount = 0;
+          
           try {
             const val = await ctx.kv.get('test:counter');
             kvHits = typeof val === 'number' ? val : 0;
+            
+            const hVal = await ctx.kv.get('stats:after_save_count');
+            hookCount = typeof hVal === 'number' ? hVal : 0;
           } catch {
             // KV may not be configured in playground, log silently
           }
@@ -74,9 +89,9 @@ export default definePlugin({
                   },
                   {
                     type: 'stat',
-                    label: 'Hook',
-                    value: 'content:afterSave',
-                    change: 0,
+                    label: 'Content Saves',
+                    value: hookCount,
+                    change: hookCount > 0 ? 100 : 0,
                   },
                   {
                     type: 'stat',

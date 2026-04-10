@@ -18,4 +18,4 @@ export type {
   PluginCapability,
   SerializedRequest,
   RouteCtx,
-} from './types.js';
+} from './types';

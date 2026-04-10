@@ -191,6 +191,7 @@ A plugin must declare everything it intends to access.
 | `network:fetch` | Enables `ctx.http.fetch()` (requires `allowedHosts`) |
 | `network:fetch:any` | Enables unrestriced HTTP fetching |
 | `read:users` | Access to the system user directory |
+| `crypto:encrypt` | Access to `ctx.crypto.encrypt()` and `decrypt()` |
 
 ---
 
@@ -205,6 +206,7 @@ ctx.storage // Named SQL-like storage collections
 ctx.site    // Site title, URL, and locale settings
 ctx.content // (Requires capability) Access to CMS documents
 ctx.http    // (Requires capability) Fetch external APIs
+ctx.crypto  // (Requires capability) Secure encryption/decryption
 ```
 
 ---
@@ -230,6 +232,27 @@ Usage:
 ```typescript
 await ctx.storage.analytics.put('row-1', { timestamp: Date.now(), event: 'click' });
 ```
+
+---
+
+## Sensitive Data Encryption
+
+For plugins handling sensitive information (like API keys), FlareCMS provides a system-level encryption bridge using the site's `AUTH_SECRET`.
+
+### Usage
+Requires the `crypto:encrypt` capability.
+
+```typescript
+// Encrypt sensitive data before storing in KV
+const encrypted = await ctx.crypto.encrypt(rawApiKey);
+await ctx.kv.set('config', { encryptedKey: encrypted });
+
+// Decrypt when needed
+const rawKey = await ctx.crypto.decrypt(config.encryptedKey);
+```
+
+> [!IMPORTANT]
+> Encryption is tied to the system secret. If the host environment's secret changes, old encrypted data will become undecipherable.
 
 ---
 

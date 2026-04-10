@@ -181,7 +181,7 @@ function PluginWidgetsSection() {
           <Card
             key={`${w.pluginId}-${w.widgetId}`}
             className={cn(
-              'shadow-none border-border overflow-hidden',
+              'py-0 shadow-none border-border overflow-hidden',
               w.size === 'full'
                 ? 'md:col-span-2 xl:col-span-3'
                 : w.size === 'half'

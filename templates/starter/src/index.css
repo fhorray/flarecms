@@ -1,20 +1,77 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+
+  --color-background: oklch(1 0 0);
+  --color-foreground: oklch(0.145 0 0);
+  --color-card: oklch(1 0 0);
+  --color-card-foreground: oklch(0.145 0 0);
+  --color-popover: oklch(1 0 0);
+  --color-popover-foreground: oklch(0.145 0 0);
+  --color-primary: oklch(0.205 0 0);
+  --color-primary-foreground: oklch(0.985 0 0);
+  --color-secondary: oklch(0.97 0 0);
+  --color-secondary-foreground: oklch(0.205 0 0);
+  --color-muted: oklch(0.97 0 0);
+  --color-muted-foreground: oklch(0.556 0 0);
+  --color-accent: oklch(0.97 0 0);
+  --color-accent-foreground: oklch(0.205 0 0);
+  --color-destructive: oklch(0.577 0.245 27.325);
+  --color-border: oklch(0.922 0 0);
+  --color-input: oklch(0.922 0 0);
+  --color-ring: oklch(0.708 0 0);
+  
+  --radius-lg: 0.625rem;
+  --radius-md: calc(var(--radius-lg) * 0.8);
+  --radius-sm: calc(var(--radius-lg) * 0.6);
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors h-10 px-4 py-2 cursor-pointer disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .btn-primary {
+    @apply bg-zinc-900 text-zinc-50 hover:bg-zinc-800;
+  }
+
+  .card {
+    @apply rounded-xl border border-zinc-200 bg-white text-zinc-950 p-6 shadow-sm;
+  }
+
+  .input {
+    @apply flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+}
+
 @layer base {
+  * {
+    @apply border-zinc-200;
+  }
   body {
     @apply bg-zinc-50 text-zinc-950 antialiased;
   }
 }
 
-/* User's custom styles for the starter site */
-.btn {
-  @apply px-4 py-2 rounded-lg font-semibold transition-all;
-}
-
-.btn-primary {
-  @apply bg-zinc-950 text-white hover:bg-zinc-800;
-}
-
-.card {
-  @apply p-6 bg-white border border-zinc-200 rounded-2xl shadow-sm;
+.dark {
+  --color-background: oklch(0.145 0 0);
+  --color-foreground: oklch(0.985 0 0);
+  --color-card: oklch(0.205 0 0);
+  --color-card-foreground: oklch(0.985 0 0);
+  --color-popover: oklch(0.205 0 0);
+  --color-popover-foreground: oklch(0.985 0 0);
+  --color-primary: oklch(0.922 0 0);
+  --color-primary-foreground: oklch(0.205 0 0);
+  --color-secondary: oklch(0.269 0 0);
+  --color-secondary-foreground: oklch(0.985 0 0);
+  --color-muted: oklch(0.269 0 0);
+  --color-muted-foreground: oklch(0.708 0 0);
+  --color-accent: oklch(0.269 0 0);
+  --color-accent-foreground: oklch(0.985 0 0);
+  --color-destructive: oklch(0.704 0.191 22.216);
+  --color-border: oklch(1 0 0 / 10%);
+  --color-input: oklch(1 0 0 / 15%);
+  --color-ring: oklch(0.556 0 0);
 }

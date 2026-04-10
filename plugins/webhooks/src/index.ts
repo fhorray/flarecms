@@ -107,53 +107,7 @@ export default definePlugin({
 
       // ─── Overview Page: List Webhooks ──────────────────────────────────────
       if (type === 'page_load' && interaction.page === '/') {
-        const endpointsStore = ctx.storage['endpoints'];
-        if (!endpointsStore) return { blocks: [{ type: 'text', text: 'Storage unreachable' }] };
-
-        const endpoints = (await endpointsStore.query()) as { items: WebhookEndpoint[] };
-
-        const rows = endpoints.items.map((ep) => ({
-          name: ep.name,
-          url: ep.url,
-          event: ep.event === 'all' ? 'All Events' : ep.event,
-          status: ep.active ? 'Active' : 'Inactive',
-          actions: {
-            type: 'button_group',
-            buttons: [
-              { type: 'button', id: `edit:${ep.id}`, label: 'Edit', variant: 'outline', size: 'sm' },
-              { type: 'button', id: `test:${ep.id}`, label: 'Test', variant: 'secondary', size: 'sm' },
-              { type: 'button', id: `delete:${ep.id}`, label: 'Delete', variant: 'destructive', size: 'sm' }
-            ]
-          }
-        }));
-
-        return {
-          blocks: [
-            { type: 'header', text: 'Configured Webhooks', size: 'lg' },
-            { type: 'text', text: 'Manage outbound endpoints that receive real-time content updates.' },
-            {
-              type: 'button_group',
-              buttons: [{ type: 'button', id: 'new-webhook', label: 'Create New Webhook', variant: 'default' }]
-            },
-            { type: 'divider' },
-            rows.length > 0 ? {
-              type: 'table',
-              columns: [
-                { key: 'name', label: 'Name' },
-                { key: 'url', label: 'Endpoint URL' },
-                { key: 'event', label: 'Trigger' },
-                { key: 'status', label: 'Status' },
-                { key: 'actions', label: 'Actions' }
-              ],
-              rows
-            } : {
-              type: 'alert',
-              status: 'info',
-              title: 'No Webhooks Configured',
-              message: 'Click the button above to add your first automation.'
-            }
-          ]
-        };
+        return await renderWebhookList(ctx);
       }
 
       // ─── Logs Page ─────────────────────────────────────────────────────────
@@ -263,9 +217,10 @@ export default definePlugin({
           await endpointsStore.put(id, { id, name, url, event, active });
         }
 
+        const listResponse = await renderWebhookList(ctx);
         return {
+          ...listResponse,
           toast: { type: 'success', message: `Webhook ${existingId ? 'updated' : 'created'} successfully!` },
-          blocks: [] // Triggers refresh
         };
       }
 
@@ -273,9 +228,11 @@ export default definePlugin({
       if (type === 'block_action' && interaction.blockId.startsWith('delete:')) {
         const id = interaction.blockId.split(':')[1] || '';
         await ctx.storage['endpoints']?.delete(id);
+        
+        const listResponse = await renderWebhookList(ctx);
         return {
+          ...listResponse,
           toast: { type: 'info', message: 'Webhook deleted.' },
-          blocks: [] // Triggers refresh
         };
       }
 
@@ -294,12 +251,13 @@ export default definePlugin({
             status: result.status
           });
 
+          const listResponse = await renderWebhookList(ctx);
           return {
+            ...listResponse,
             toast: {
               type: result.ok ? 'success' : 'error',
               message: `Test ${result.ok ? 'sent successfully' : 'failed'} (Status: ${result.status})`
             },
-            blocks: []
           };
         }
       }
@@ -308,6 +266,59 @@ export default definePlugin({
     }
   }
 });
+
+/**
+ * Helper to render the primary webhook list
+ */
+async function renderWebhookList(ctx: PluginContext): Promise<BlockResponse> {
+  const endpointsStore = ctx.storage['endpoints'];
+  if (!endpointsStore) return { blocks: [{ type: 'text', text: 'Storage unreachable' }] };
+
+  const endpoints = (await endpointsStore.query()) as { items: WebhookEndpoint[] };
+
+  const rows = endpoints.items.map((ep) => ({
+    name: ep.name,
+    url: ep.url,
+    event: ep.event === 'all' ? 'All Events' : ep.event,
+    status: ep.active ? 'Active' : 'Inactive',
+    actions: {
+      type: 'button_group',
+      buttons: [
+        { type: 'button', id: `edit:${ep.id}`, label: 'Edit', variant: 'outline', size: 'sm' },
+        { type: 'button', id: `test:${ep.id}`, label: 'Test', variant: 'secondary', size: 'sm' },
+        { type: 'button', id: `delete:${ep.id}`, label: 'Delete', variant: 'destructive', size: 'sm' }
+      ]
+    }
+  }));
+
+  return {
+    blocks: [
+      { type: 'header', text: 'Configured Webhooks', size: 'lg' },
+      { type: 'text', text: 'Manage outbound endpoints that receive real-time content updates.' },
+      {
+        type: 'button_group',
+        buttons: [{ type: 'button', id: 'new-webhook', label: 'Create New Webhook', variant: 'default' }]
+      },
+      { type: 'divider' },
+      rows.length > 0 ? {
+        type: 'table',
+        columns: [
+          { key: 'name', label: 'Name' },
+          { key: 'url', label: 'Endpoint URL' },
+          { key: 'event', label: 'Trigger' },
+          { key: 'status', label: 'Status' },
+          { key: 'actions', label: 'Actions' }
+        ],
+        rows
+      } : {
+        type: 'alert',
+        status: 'info',
+        title: 'No Webhooks Configured',
+        message: 'Click the button above to add your first automation.'
+      }
+    ]
+  };
+}
 
 /**
  * Helper to iterate and trigger webhooks

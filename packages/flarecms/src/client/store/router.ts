@@ -124,4 +124,4 @@ export function redirect<T extends RouteName>(
 }
 
 // Default initialization
-initRouter('');
+// Removed: initRouter(''); // This was causing initialization order issues in some environments.

@@ -10,28 +10,39 @@ app.route('/api', createFlareAPI({ base: '/admin' }));
 // 2. Production Asset Serving & SPA Routing
 // This handles serving the React frontend and ensuring SPA routes work.
   app.get('*', async (c) => {
-  // 1. Production Asset Serving (Cloudflare Pages)
-  // We try to serve the static file from ASSETS, but we skip this in development
-  // to avoid conflicts with Vite's own asset serving.
+  const url = new URL(c.req.url);
+
+  // 1. Production Asset Serving (Cloudflare Pages / Workers Assets)
   if (c.env.ASSETS && process.env.NODE_ENV === 'production') {
     try {
-      const res = await c.env.ASSETS.fetch(c.req.url);
-      if (res.status !== 404) return res;
+      // First, try to fetch the specific requested path
+      let res = await c.env.ASSETS.fetch(c.req.url);
+      
+      // If the path is not found (404) or it's a "clean" path (no extension), 
+      // we serve the SPA entry point: index.html
+      if (res.status === 404 || !url.pathname.includes('.')) {
+        res = await c.env.ASSETS.fetch(new URL('/index.html', c.req.url).toString());
+      }
+      
+      if (res.ok) return res;
     } catch {
-      // Fallback
+      // Fallback to manual response if ASSETS fetch fails
     }
   }
 
   // 2. SPA / Development Fallback
-  // We return the main HTML shell. In production, this serves as the entry point
-  // for the React app. In development, Vite handles hot-reloading.
+  // In development, Vite handles hot-reloading using the index.html template.
+  const isDev = process.env.NODE_ENV !== 'production';
+  
   return c.html(`
     <!DOCTYPE html>
     <html lang="en">
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>FlareCMS Site (Dev)</title>
+        <title>FlareCMS ${isDev ? '(Dev)' : ''}</title>
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        ${isDev ? `
         <script type="module">
           import { injectIntoGlobalHook } from "/@react-refresh";
           injectIntoGlobalHook(window);
@@ -40,10 +51,11 @@ app.route('/api', createFlareAPI({ base: '/admin' }));
           window.__vite_plugin_react_preamble_installed__ = true;
         </script>
         <link rel="stylesheet" href="/src/index.css">
+        ` : ''}
       </head>
       <body>
         <div id="root"></div>
-        <script type="module" src="/src/client.tsx"></script>
+        <script type="module" src="${isDev ? '/src/client.tsx' : '/assets/index.js'}"></script>
       </body>
     </html>
   `);

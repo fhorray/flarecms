@@ -217,9 +217,7 @@ export function AppSidebar({ variant = 'sidebar' }: AppSidebarProps) {
                           isActive={
                             item.active || page?.route === item.routeName
                           }
-                          onClick={() =>
-                            navigate(item.routeName, item.params)
-                          }
+                          onClick={() => navigate(item.routeName, item.params)}
                           tooltip={item.label}
                         >
                           <item.icon />
@@ -240,7 +238,7 @@ export function AppSidebar({ variant = 'sidebar' }: AppSidebarProps) {
           <Tooltip>
             <TooltipTrigger
               render={
-                <Avatar className="size-8 rounded-lg shrink-0 cursor-pointer" />
+                <Avatar className="size-12 rounded-lg shrink-0 cursor-pointer" />
               }
             >
               <AvatarFallback className="text-[10px] font-semibold">
