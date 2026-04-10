@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
 import { createDb } from '../../db';
 import { requireRole } from '../middlewares/rbac';
-import type { Bindings } from '../index';
+import type { Bindings, Variables } from '../../types';
 import { apiResponse } from '../lib/response';
 
-export const settingsRoutes = new Hono<{ Bindings: Bindings }>();
+export const settingsRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 // All settings operations require admin role
 settingsRoutes.use('/*', requireRole(['admin']));

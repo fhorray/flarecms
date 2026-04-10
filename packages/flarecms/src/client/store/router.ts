@@ -16,12 +16,39 @@ const ROUTE_PATTERNS = {
   settings_api: '/settings/api',
   device: '/device',
   collection: '/collection/:id/:slug',
+  plugins: '/plugins',
+  plugin_page: '/plugins/:pluginId',
+  plugin_subpage: '/plugins/:pluginId/:page',
   document_list: '/:slug',
   document_edit: '/:slug/:id',
 } as const;
 
+/**
+ * ExtractParams is a mapped type that extracts the parameters for each route.
+ */
+type ExtractParams<Path extends string> =
+  Path extends `${string}:${infer Param}/${infer Rest}`
+  ? { [K in Param | keyof ExtractParams<`/${Rest}`>]: string }
+  : Path extends `${string}:${infer Param}`
+  ? { [K in Param]: string }
+  : {};
+
+/**
+ * RouteParams is a mapped type that extracts the parameters for each route.
+ */
+type RouteParams = {
+  [K in RouteName]: ExtractParams<RoutePatterns[K]>;
+};
+
+/**
+ * RoutePatterns is a mapped type that extracts the parameters for each route.
+ */
 type RoutePatterns = typeof ROUTE_PATTERNS;
-type RouteName = keyof RoutePatterns;
+
+/**
+ * RouteName is a mapped type that extracts the parameters for each route.
+ */
+export type RouteName = keyof RoutePatterns;
 
 // Global reference to the internal nanostores-router instance
 let internalRouter: Router<RoutePatterns> | null = null;
@@ -69,14 +96,19 @@ export function initRouter(base: string) {
  */
 export function navigate<T extends RouteName>(
   route: T,
-  params?: any,
+  params?: RouteParams[T],
   search?: Record<string, string | number>
 ) {
   if (!internalRouter) {
     console.warn('Router not initialized.');
     return;
   }
-  openPage(internalRouter, route, params, search as any);
+
+  openPage(internalRouter, {
+    route,
+    params,
+    search,
+  } as any);
 }
 
 /**

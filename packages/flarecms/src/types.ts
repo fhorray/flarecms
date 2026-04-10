@@ -3,6 +3,7 @@ import {
   type KVNamespace,
   type Fetcher,
 } from '@cloudflare/workers-types';
+import type { PluginManager } from './plugins';
 
 export type Bindings = {
   DB: D1Database;
@@ -19,4 +20,5 @@ export type Variables = {
   user: any;
   scopes: string[];
   reservedSlugs: string[];
+  pluginManager: PluginManager;
 };

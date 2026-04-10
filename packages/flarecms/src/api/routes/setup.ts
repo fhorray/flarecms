@@ -9,11 +9,11 @@ import { setCookie } from 'hono/cookie';
 import { ulid } from 'ulidx';
 import { encodeBase64url } from '@oslojs/encoding';
 import { setupSchema, webauthnOptionsSchema, webauthnVerifySchema } from '../schemas';
-import type { Bindings } from '../index';
+import type { Bindings, Variables } from '../../types';
 import { apiResponse } from '../lib/response';
 import { runMigrations } from '../../db';
 
-export const setupRoutes = new Hono<{ Bindings: Bindings }>();
+export const setupRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 // GET /api/setup/status
 // Checks if the system is already configured

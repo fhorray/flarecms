@@ -5,7 +5,7 @@ import { setCookie } from 'hono/cookie';
 import { magicLinkRequestSchema, magicLinkVerifySchema } from '../schemas/auth';
 import { encodeHexLowerCase } from '@oslojs/encoding';
 import { ulid } from 'ulidx';
-import type { Bindings, Variables } from '../index';
+import type { Bindings, Variables } from '../../types';
 import { apiResponse } from '../lib/response';
 
 export const magicRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -24,14 +24,14 @@ magicRoutes.post('/request', async (c) => {
   const signupEnabled = await db.selectFrom('options').select('value').where('name', '=', 'flare:signup_enabled').executeTakeFirst();
   const defaultRole = await db.selectFrom('options').select('value').where('name', '=', 'flare:signup_default_role').executeTakeFirst();
   const domainRulesRaw = await db.selectFrom('options').select('value').where('name', '=', 'flare:signup_domain_rules').executeTakeFirst();
-  
+
   const isEnabled = signupEnabled?.value === 'true';
   const roleDefault = defaultRole?.value || 'editor';
   const domainRules = JSON.parse(domainRulesRaw?.value || '{}') as Record<string, string>;
 
   // 2. Link or Provision User
   let user = await db.selectFrom('fc_users').selectAll().where('email', '=', email).executeTakeFirst();
-  
+
   if (!user) {
     if (!isEnabled) {
       return apiResponse.error(c, 'Signups are currently disabled', 403);
@@ -61,7 +61,7 @@ magicRoutes.post('/request', async (c) => {
   const randomBytes = new Uint8Array(32);
   crypto.getRandomValues(randomBytes);
   const rawToken = encodeHexLowerCase(randomBytes);
-  
+
   // Hash for storage
   const encoder = new TextEncoder();
   const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(rawToken));
@@ -85,10 +85,10 @@ magicRoutes.post('/request', async (c) => {
   // For now, we simulate logging it
   console.log(`[MAGIC LINK] -> https://${new URL(c.req.url).hostname}/verify?email=${encodeURIComponent(email)}&token=${rawToken}`);
 
-  return apiResponse.ok(c, { 
-    success: true, 
-    message: 'Magic link sent', 
-    dev_link: `https://${new URL(c.req.url).hostname}/verify?email=${encodeURIComponent(email)}&token=${rawToken}` 
+  return apiResponse.ok(c, {
+    success: true,
+    message: 'Magic link sent',
+    dev_link: `https://${new URL(c.req.url).hostname}/verify?email=${encodeURIComponent(email)}&token=${rawToken}`
   });
 });
 
@@ -137,13 +137,13 @@ magicRoutes.post('/verify', async (c) => {
     })
     .execute();
 
-    setCookie(c, 'session', sessionId, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'Strict',
-      expires: expiresAt,
-      path: '/'
-    });
+  setCookie(c, 'session', sessionId, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'Strict',
+    expires: expiresAt,
+    path: '/'
+  });
 
 
   return apiResponse.ok(c, { success: true, message: 'Logged in via Magic Link' });

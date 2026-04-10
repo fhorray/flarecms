@@ -6,7 +6,7 @@ import { ulid } from 'ulidx';
 import { dynamicContentSchema, collectionSchema, fieldSchema } from '../schemas';
 import { sql } from 'kysely';
 import { cache } from '../lib/cache';
-import type { Bindings, Variables } from 'src/types';
+import type { Bindings, Variables } from '../../types';
 
 export const mcpRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 

@@ -1,14 +1,15 @@
 import {
-  LayoutDashboard as LayoutDashboardIcon,
-  Database as DatabaseIcon,
-  Users as UsersIcon,
-  Settings as SettingsIcon,
-  FileText as FileTextIcon,
-  Layers as LayersIcon,
-  MessageSquare as MessageSquareIcon,
-  Menu as MenuIcon,
-  LogOut as LogOutIcon,
-  Sparkles as SparklesIcon,
+  LayoutDashboardIcon,
+  DatabaseIcon,
+  UsersIcon,
+  SettingsIcon,
+  FileTextIcon,
+  LayersIcon,
+  MessageSquareIcon,
+  MenuIcon,
+  LogOutIcon,
+  SparklesIcon,
+  PuzzleIcon,
 } from 'lucide-react';
 
 import {
@@ -24,33 +25,42 @@ import {
   SidebarMenuButton,
   SidebarRail,
 } from './ui/sidebar';
-import { $router, navigate } from '../store/router';
+import { $router, navigate, type RouteName } from '../store/router';
 import { useStore } from '@nanostores/react';
 import { $auth, logout } from '../store/auth';
 import { Avatar, AvatarFallback } from './ui/avatar';
-import { 
-  Tooltip, 
-  TooltipContent, 
-  TooltipTrigger 
-} from './ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { useSidebar } from './ui/sidebar';
 
 import { $settings } from '../store/settings';
 
 import {
   Collapsible,
-
   CollapsibleContent,
   CollapsibleTrigger,
 } from './ui/collapsible';
 import { ChevronRight } from 'lucide-react';
 
 import { $collections } from '../store/collections';
+import { $plugins } from '../store/plugins';
 
-import { Icon } from './ui/icon-picker';
+import { Icon, type IconName } from './ui/icon-picker';
 
 interface AppSidebarProps {
   variant?: 'sidebar' | 'floating' | 'inset';
+}
+
+interface MenuItem {
+  label: string;
+  icon: React.ElementType | (() => React.ReactNode);
+  routeName: RouteName;
+  params?: Record<string, string | number | boolean | undefined>;
+  active?: boolean;
+}
+
+interface MenuGroup {
+  label: string;
+  items: MenuItem[];
 }
 
 export function AppSidebar({ variant = 'sidebar' }: AppSidebarProps) {
@@ -58,13 +68,17 @@ export function AppSidebar({ variant = 'sidebar' }: AppSidebarProps) {
   const auth = useStore($auth);
   const settings = useStore($settings);
   const { data: collections } = useStore($collections);
+  const { data: plugins } = useStore($plugins);
 
-  const menuGroups = [
+  const menuGroups: MenuGroup[] = [
     {
       label: 'Content',
       items: (collections || []).map((col) => ({
         label: col.label,
-        icon: col.slug === 'pages' ? FileTextIcon : () => <Icon name={col.icon as any} />,
+        icon:
+          col.slug === 'pages'
+            ? FileTextIcon
+            : () => <Icon name={col.icon as IconName} />,
         routeName: 'document_list',
         params: { slug: col.slug },
       })),
@@ -95,18 +109,60 @@ export function AppSidebar({ variant = 'sidebar' }: AppSidebarProps) {
           routeName: 'settings',
           active: page?.route === 'settings',
         },
+        {
+          label: 'Plugins',
+          icon: PuzzleIcon,
+          routeName: 'plugins',
+          active: page?.route === 'plugins',
+        },
       ],
     },
   ];
+
+  // Dynamically add Plugin groups if they have admin pages
+  (plugins || []).forEach((plugin) => {
+    if (plugin.adminPages && plugin.adminPages.length > 0) {
+      menuGroups.push({
+        label: plugin.name || plugin.id,
+        items: plugin.adminPages.map((adminPage) => ({
+          label: adminPage.label || adminPage.path,
+          icon: adminPage.icon
+            ? () => <Icon name={adminPage.icon as IconName} />
+            : PuzzleIcon,
+          routeName: adminPage.path === '/' ? 'plugin_page' : 'plugin_subpage',
+          params: {
+            pluginId: plugin.id,
+            page:
+              adminPage.path === '/'
+                ? undefined
+                : adminPage.path.replace(/^\//, ''),
+          },
+          active:
+            page?.route?.startsWith('plugin_') &&
+            page.params.pluginId === plugin.id &&
+            (adminPage.path === '/'
+              ? !page.params.page
+              : page.params.page === adminPage.path.replace(/^\//, '')),
+        })),
+      });
+    }
+  });
 
   return (
     <Sidebar collapsible="icon" variant={variant}>
       <SidebarHeader className="flex flex-row items-center px-4 py-6 gap-3 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center transition-[padding,justify-content]">
         <Tooltip>
-          <TooltipTrigger render={<div className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground shrink-0 shadow-sm cursor-pointer" />}>
-              <SparklesIcon className="size-4" />
+          <TooltipTrigger
+            render={
+              <div className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground shrink-0 shadow-sm cursor-pointer" />
+            }
+          >
+            <SparklesIcon className="size-4" />
           </TooltipTrigger>
-          <TooltipContent side="right" className="group-data-[collapsible=expanded]:hidden">
+          <TooltipContent
+            side="right"
+            className="group-data-[collapsible=expanded]:hidden"
+          >
             {settings['flare:site_title'] || 'FlareCMS'}
           </TooltipContent>
         </Tooltip>
@@ -159,9 +215,11 @@ export function AppSidebar({ variant = 'sidebar' }: AppSidebarProps) {
                       <SidebarMenuItem key={item.label}>
                         <SidebarMenuButton
                           isActive={
-                            (item as any).active || page?.route === item.routeName
+                            item.active || page?.route === item.routeName
                           }
-                          onClick={() => navigate(item.routeName, (item as any).params)}
+                          onClick={() =>
+                            navigate(item.routeName, item.params)
+                          }
                           tooltip={item.label}
                         >
                           <item.icon />
@@ -180,12 +238,19 @@ export function AppSidebar({ variant = 'sidebar' }: AppSidebarProps) {
       <SidebarFooter className="p-4 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-4 transition-[padding]">
         <div className="flex items-center gap-3 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:gap-4">
           <Tooltip>
-            <TooltipTrigger render={<Avatar className="size-8 rounded-lg shrink-0 cursor-pointer" />}>
-                <AvatarFallback className="text-[10px] font-semibold">
-                  {auth.user?.email.substring(0, 2).toUpperCase()}
-                </AvatarFallback>
+            <TooltipTrigger
+              render={
+                <Avatar className="size-8 rounded-lg shrink-0 cursor-pointer" />
+              }
+            >
+              <AvatarFallback className="text-[10px] font-semibold">
+                {auth.user?.email.substring(0, 2).toUpperCase()}
+              </AvatarFallback>
             </TooltipTrigger>
-            <TooltipContent side="right" className="group-data-[collapsible=expanded]:hidden">
+            <TooltipContent
+              side="right"
+              className="group-data-[collapsible=expanded]:hidden"
+            >
               {auth.user?.email}
             </TooltipContent>
           </Tooltip>
@@ -203,21 +268,31 @@ export function AppSidebar({ variant = 'sidebar' }: AppSidebarProps) {
           </div>
 
           <SidebarMenu className="w-fit group-data-[collapsible=expanded]:block hidden">
-             <SidebarMenuItem>
-                <SidebarMenuButton size="sm" onClick={() => logout()} tooltip="Sign out" className="text-muted-foreground/50 hover:text-destructive">
-                   <LogOutIcon />
-                </SidebarMenuButton>
-             </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                size="sm"
+                onClick={() => logout()}
+                tooltip="Sign out"
+                className="text-muted-foreground/50 hover:text-destructive"
+              >
+                <LogOutIcon />
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
 
           <div className="group-data-[collapsible=icon]:block hidden">
-             <SidebarMenu>
-                <SidebarMenuItem>
-                   <SidebarMenuButton size="sm" onClick={() => logout()} tooltip="Sign out" className="text-muted-foreground/50 hover:text-destructive">
-                      <LogOutIcon />
-                   </SidebarMenuButton>
-                </SidebarMenuItem>
-             </SidebarMenu>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  size="sm"
+                  onClick={() => logout()}
+                  tooltip="Sign out"
+                  className="text-muted-foreground/50 hover:text-destructive"
+                >
+                  <LogOutIcon />
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
           </div>
         </div>
       </SidebarFooter>

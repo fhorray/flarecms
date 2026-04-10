@@ -15,7 +15,7 @@ import { pluginRoutes } from '../api/routes/plugins';
 import { pluginMiddleware } from '../plugins/middleware';
 import { apiResponse } from '../api/lib/response';
 import type { Bindings, Variables } from '../types';
-import type { PluginDescriptor, SandboxRunnerFactory } from '../plugins/types';
+import type { PluginDescriptor, FlarePlugin, SandboxRunnerFactory } from '../plugins/types';
 
 /**
  * Creates the modular FlareCMS API router.
@@ -26,7 +26,7 @@ import type { PluginDescriptor, SandboxRunnerFactory } from '../plugins/types';
  */
 export function createFlareAPI(options: { 
   base?: string;
-  plugins?: PluginDescriptor[];
+  plugins?: (PluginDescriptor | FlarePlugin)[];
   sandboxRunner?: SandboxRunnerFactory;
 } = {}) {
   const base = options.base || '/admin';

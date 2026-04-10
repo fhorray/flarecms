@@ -6,7 +6,10 @@ export { createPluginContext } from './context.js';
 export { pluginMiddleware } from './middleware.js';
 
 export type {
+  BlockInteraction,
+  BlockResponse,
   FlarePluginDefinition,
+  FlarePlugin,
   PluginDescriptor,
   PluginManifest,
   PluginContext,

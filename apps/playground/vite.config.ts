@@ -24,10 +24,10 @@ export default defineConfig({
             if (id.includes('react') || id.includes('hono')) {
               return 'vendor';
             }
-            // Agrupar ícones da Lucide em blocos para reduzir o número de arquivos
+            // Group Lucide icons in blocks to reduce the number of files
             if (id.includes('lucide-react/dist/esm/icons')) {
               const iconName = id.split('/').pop()?.split('.')[0] || '';
-              // Agrupa ícones pela primeira letra (ex: index_a, index_b...)
+              // Group icons by the first letter (ex: index_a, index_b...)
               const group = iconName.charAt(0).toLowerCase();
               return `icons/group_${group}`;
             }

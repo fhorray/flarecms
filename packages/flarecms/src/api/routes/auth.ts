@@ -11,7 +11,7 @@ import {
   verifyAuthenticationResponse
 } from '@simplewebauthn/server';
 import { decodeBase64url, encodeBase64url } from '@oslojs/encoding';
-import type { Bindings, Variables } from '../index';
+import type { Bindings, Variables } from '../../types';
 
 import { apiResponse } from '../lib/response';
 

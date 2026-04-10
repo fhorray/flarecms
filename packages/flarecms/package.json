@@ -38,17 +38,17 @@
     "flarecms": "./dist/cli/index.js"
   },
   "exports": {
-    ".": "./dist/index.js",
-    "./server": "./dist/server/index.js",
-    "./client": "./dist/client/index.js",
+    ".": "./src/index.ts",
+    "./server": "./src/server/index.ts",
+    "./client": "./src/client/index.ts",
     "./style.css": {
       "types": "./dist/style.css.d.ts",
       "default": "./dist/style.css"
     },
-    "./auth": "./dist/auth/index.js",
-    "./db": "./dist/db/index.js",
-    "./cli": "./dist/cli/index.js",
-    "./plugins": "./dist/plugins/index.js"
+    "./auth": "./src/auth/index.ts",
+    "./db": "./src/db/index.ts",
+    "./cli": "./src/cli/index.ts",
+    "./plugins": "./src/plugins/index.ts"
   },
   "dependencies": {},
   "devDependencies": {

@@ -3,12 +3,12 @@ import { createDb, ensureUniqueSlug } from '../../db';
 import { sql } from 'kysely';
 import { ulid } from 'ulidx';
 import { dynamicContentSchema } from '../schemas';
-import type { Bindings } from '../index';
+import type { Bindings, Variables } from '../../types';
 import { apiResponse } from '../lib/response';
 
 import { requireRole, requireScope } from '../middlewares/rbac';
 
-export const contentRoutes = new Hono<{ Bindings: Bindings }>();
+export const contentRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 // Write operations (POST, PUT, DELETE) restricted to admin or editor roles.
 contentRoutes.post('/:collection', requireScope('write', 'collection_slug'), requireRole(['admin', 'editor']));
@@ -116,7 +116,7 @@ contentRoutes.post('/:collection', async (c) => {
     status,
   };
 
-  const pluginManager = c.get('pluginManager' as any);
+  const pluginManager = c.get('pluginManager');
   if (pluginManager) {
     doc = await pluginManager.runContentBeforeSave(doc, collectionName, true);
   }
@@ -157,7 +157,7 @@ contentRoutes.put('/:collection/:id', async (c) => {
     finalData.slug = uniqueSlug;
   }
 
-  const pluginManager = c.get('pluginManager' as any);
+  const pluginManager = c.get('pluginManager');
   let docToSave = {
     ...finalData,
     updated_at: sql`CURRENT_TIMESTAMP`
@@ -190,7 +190,7 @@ contentRoutes.delete('/:collection/:id', async (c) => {
   const id = c.req.param('id');
   const db = createDb(c.env.DB);
 
-  const pluginManager = c.get('pluginManager' as any);
+  const pluginManager = c.get('pluginManager');
   if (pluginManager) {
     const allowed = await pluginManager.runContentBeforeDelete(id, collectionName);
     if (!allowed) return apiResponse.error(c, 'Deletion prevented by plugin', 403);

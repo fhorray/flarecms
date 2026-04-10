@@ -52,7 +52,7 @@ export function DocumentsPage() {
             variant="outline"
             size="sm"
             className="font-semibold h-9 px-4 text-xs gap-2"
-            onClick={() => navigate('collection', { id: schema?.id, slug })}
+            onClick={() => navigate('collection', { id: schema?.id || '', slug })}
           >
             <SettingsIcon className="size-3.5" />
             Config
@@ -89,7 +89,7 @@ export function DocumentsPage() {
               variant="outline"
               size="sm"
               className="h-9 px-6 text-[10px] font-black uppercase tracking-widest border-primary/20 hover:bg-primary/10 hover:text-primary transition-colors"
-              onClick={() => navigate('collection', { id: schema?.id, slug })}
+              onClick={() => navigate('collection', { id: schema?.id || '', slug })}
             >
               Add Fields
             </Button>

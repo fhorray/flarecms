@@ -70,3 +70,12 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
     throwHttpErrors: false,
   }) as any;
 }
+
+/**
+ * Sends a Block Kit interaction to a plugin's admin handler.
+ */
+export async function sendPluginInteraction(pluginId: string, interaction: any) {
+  return api.post(`plugins/${pluginId}/admin`, {
+    json: interaction
+  }).json();
+}

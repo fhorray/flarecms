@@ -4,7 +4,12 @@ import { $collections } from '../store/collections';
 import { $router, navigate } from '../store/router';
 import { CollectionModal } from '../components/collection-modal';
 import { Button } from '../components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from '../components/ui/card';
 import {
   DatabaseIcon,
   PlusIcon,
@@ -14,7 +19,10 @@ import {
   UploadIcon,
   UserIcon,
   SparklesIcon,
+  Puzzle as PuzzleIcon,
 } from 'lucide-react';
+import { $plugins } from '../store/plugins';
+import { PluginWidget } from '../components/plugin-widget';
 
 export function DashboardPage() {
   const { data: collections, loading } = useStore($collections);
@@ -128,6 +136,76 @@ export function DashboardPage() {
         </Card>
       </div>
 
+      {/* Plugin Widgets Section */}
+      <PluginWidgetsSection />
     </div>
   );
+}
+
+function PluginWidgetsSection() {
+  const { data: plugins } = useStore($plugins);
+
+  const widgets: Array<{
+    pluginId: string;
+    widgetId: string;
+    title?: string;
+    size?: string;
+  }> = [];
+
+  (plugins || []).forEach((plugin) => {
+    if (plugin.adminWidgets) {
+      plugin.adminWidgets.forEach((w) => {
+        widgets.push({
+          pluginId: plugin.id,
+          widgetId: w.id,
+          title: w.title,
+          size: w.size,
+        });
+      });
+    }
+  });
+
+  if (widgets.length === 0) return null;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-2">
+        <PuzzleIcon className="size-4 text-primary" />
+        <h2 className="text-lg font-bold tracking-tight">
+          Plugin Extension Insights
+        </h2>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {widgets.map((w) => (
+          <Card
+            key={`${w.pluginId}-${w.widgetId}`}
+            className={cn(
+              'shadow-none border-border overflow-hidden',
+              w.size === 'full'
+                ? 'md:col-span-2 xl:col-span-3'
+                : w.size === 'half'
+                  ? 'xl:col-span-2'
+                  : '',
+            )}
+          >
+            <CardHeader className="bg-muted/10 border-b py-3 px-5">
+              <CardTitle className="text-[10px] items-center flex gap-2 font-bold uppercase tracking-widest text-muted-foreground">
+                <span className="size-1.5 rounded-full bg-primary animate-pulse" />
+                {w.title || w.widgetId}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-5">
+              <PluginWidget pluginId={w.pluginId} widgetId={w.widgetId} />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Helper for conditional classes if not already imported from a util
+function cn(...classes: unknown[]) {
+  return classes.filter(Boolean).join(' ');
 }

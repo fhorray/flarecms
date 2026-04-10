@@ -1,6 +1,7 @@
+import { createPluginContext } from './context.js';
 import { HookPipeline } from './hooks.js';
 import { PluginRouteRegistry, type InvokeRouteOptions } from './routes.js';
-import type { ResolvedPlugin } from './types.js';
+import type { ResolvedPlugin, BlockInteraction, BlockResponse } from './types.js';
 import type { FlareDb } from '../db/index.js';
 
 /**
@@ -63,6 +64,27 @@ export class PluginManager {
 
 	async invokeRoute(pluginId: string, routeName: string, options: InvokeRouteOptions): Promise<unknown> {
 		return this.routeRegistry.invoke(pluginId, routeName, options);
+	}
+
+	/**
+	 * Invokes the administrative UI handler for a plugin.
+	 */
+	async invokeAdmin(pluginId: string, interaction: BlockInteraction): Promise<BlockResponse> {
+		const plugin = this.plugins.find((p) => p.id === pluginId);
+		if (!plugin) throw new Error(`Plugin "${pluginId}" not found.`);
+		if (!plugin.admin) throw new Error(`Plugin "${pluginId}" does not support admin interactions.`);
+
+		const ctx = createPluginContext({
+			pluginId: plugin.id,
+			version: plugin.version,
+			capabilities: plugin.capabilities,
+			allowedHosts: plugin.allowedHosts,
+			storageCollections: Object.keys(plugin.storage),
+			db: this.db,
+			siteInfo: this.siteInfo,
+		});
+
+		return plugin.admin.handler(interaction, ctx);
 	}
 
 	/**

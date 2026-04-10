@@ -7,6 +7,7 @@ import type { FlareDb } from '../db/index.js';
  */
 export class HookPipeline {
 	private hooks: Record<string, ResolvedHook[]> = {};
+	private plugins: ResolvedPlugin[] = [];
 	private db: FlareDb;
 	private siteInfo: { name: string; url: string; locale: string };
 
@@ -15,6 +16,7 @@ export class HookPipeline {
 		db: FlareDb,
 		siteInfo: { name: string; url: string; locale: string },
 	) {
+		this.plugins = plugins;
 		this.db = db;
 		this.siteInfo = siteInfo;
 
@@ -137,23 +139,14 @@ export class HookPipeline {
 	// ── Internal Helpers ──
 
 	private createContextForHook(hook: ResolvedHook): PluginContext {
-		// In a real implementation, we'd lookup the plugin's descriptor/metadata
-		// to get its capabilities and storage declarations.
-		// For now, we assume provide defaults or lookup from a central registry.
-		// This will be refined in Phase 4 (Manager).
+		const plugin = this.plugins.find((p) => p.id === hook.pluginId);
+
 		return createPluginContext({
 			pluginId: hook.pluginId,
-			version: '0.0.0', // TODO: Lookup actual version
-			capabilities: [
-				'read:content',
-				'write:content',
-				'read:media',
-				'write:media',
-				'network:fetch',
-				'read:users',
-			], // Defaulting to full for in-process for now
-			allowedHosts: [],
-			storageCollections: [],
+			version: plugin?.version || '0.0.0',
+			capabilities: plugin?.capabilities || [],
+			allowedHosts: plugin?.allowedHosts || [],
+			storageCollections: plugin ? Object.keys(plugin.storage) : [],
 			db: this.db,
 			siteInfo: this.siteInfo,
 		});

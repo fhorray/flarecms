@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { FlareAdminRouter } from 'flarecms/client';
 import 'flarecms/style.css'; // The pre-compiled prefixed CSS
+import '@flarecms/plugin-ui-kit-tester/client';
 
 function App() {
   return (

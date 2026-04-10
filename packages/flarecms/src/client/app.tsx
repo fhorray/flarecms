@@ -16,9 +16,11 @@ import { CollectionsPage } from './pages/collections';
 import { CollectionDetailPage } from './pages/collection-detail';
 import { DevicePage } from './pages/device';
 import { SettingsPage } from './pages/settings';
-import { DocumentsPage } from './pages/documents-page';
 import { DocumentDetailPage } from './pages/document-detail-page';
+import { PluginPage } from './pages/plugin-page';
+import { PluginManagerPage } from './pages/plugin-manager';
 import { TooltipProvider } from './components/ui/tooltip';
+import { DocumentsPage } from './pages/documents-page';
 
 export default function App() {
   const page = useStore($router);
@@ -139,6 +141,14 @@ export default function App() {
         {page.route === 'document_list' && <DocumentsPage />}
         {page.route === 'document_edit' && <DocumentDetailPage />}
 
+        {page.route === 'plugins' && <PluginManagerPage />}
+        {(page.route === 'plugin_page' || page.route === 'plugin_subpage') && (
+          <PluginPage
+            pluginId={page.params.pluginId}
+            page={page.route === 'plugin_page' ? '/' : `/${page.params.page}`}
+          />
+        )}
+
         {/* Login route while already authenticated -> redirect to home via layout logic or just show dashboard */}
         {page.route === 'login' && <DashboardPage />}
 
@@ -156,6 +166,9 @@ export default function App() {
           'settings_seo',
           'settings_security',
           'settings_signup',
+          'plugins',
+          'plugin_page',
+          'plugin_subpage',
         ].includes(page.route) && (
           <div className="flex flex-col items-center justify-center py-40">
             <div className="size-16 bg-muted rounded-xl flex items-center justify-center mb-8 border shadow-sm">

@@ -3,7 +3,7 @@ import { createDb } from '../../db';
 import { ulid } from 'ulidx';
 import { deviceCodeRequestSchema, deviceTokenRequestSchema, deviceApproveSchema } from '../schemas/tokens';
 import { encodeHexLowerCase } from '@oslojs/encoding';
-import type { Bindings, Variables } from '../index';
+import type { Bindings, Variables } from '../../types';
 import { requireRole } from '../middlewares/rbac';
 import { authMiddleware } from '../middlewares/auth';
 import { apiResponse } from '../lib/response';

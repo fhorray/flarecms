@@ -9,22 +9,22 @@ app.route('/api', createFlareAPI({ base: '/admin' }));
 
 // 2. Production Asset Serving & SPA Routing
 // This handles serving the React frontend and ensuring SPA routes work.
-app.get('*', async (c) => {
-  // Use the ASSETS binding to serve static files from /dist
-  if (c.env.ASSETS) {
-    const res = await c.env.ASSETS.fetch(c.req.raw);
-    
-    // If the file is not found (404), we fallback to index.html for SPA routing.
-    // This allows routes like /admin or /posts/123 to load the React app correctly.
-    if (res.status === 404) {
-      return c.env.ASSETS.fetch(new URL('/index.html', c.req.url));
+  app.get('*', async (c) => {
+  // 1. Production Asset Serving (Cloudflare Pages)
+  // We try to serve the static file from ASSETS, but we skip this in development
+  // to avoid conflicts with Vite's own asset serving.
+  if (c.env.ASSETS && process.env.NODE_ENV === 'production') {
+    try {
+      const res = await c.env.ASSETS.fetch(c.req.url);
+      if (res.status !== 404) return res;
+    } catch {
+      // Fallback
     }
-    
-    return res;
   }
 
-  // Fallback for Development Environment
-  // Vite dev server handles most things, but we provide a shell if needed.
+  // 2. SPA / Development Fallback
+  // We return the main HTML shell. In production, this serves as the entry point
+  // for the React app. In development, Vite handles hot-reloading.
   return c.html(`
     <!DOCTYPE html>
     <html lang="en">

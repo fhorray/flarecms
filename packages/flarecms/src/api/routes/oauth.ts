@@ -4,7 +4,7 @@ import { generateSessionToken } from '../../auth';
 import { setCookie } from 'hono/cookie';
 import { oauthCallbackSchema } from '../schemas/auth';
 import { ulid } from 'ulidx';
-import type { Bindings, Variables } from '../index';
+import type { Bindings, Variables } from '../../types';
 import { apiResponse } from '../lib/response';
 
 export const oauthRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
@@ -16,7 +16,7 @@ oauthRoutes.get('/github/login', (c) => {
 
   const redirectUri = encodeURIComponent(`https://${new URL(c.req.url).hostname}/api/oauth/github/callback`);
   const scope = encodeURIComponent('read:user user:email');
-  
+
   // Create secure random state parameter here to store in cookies usually
   const state = Math.random().toString(36).substring(2);
 
@@ -30,7 +30,7 @@ oauthRoutes.get('/github/callback', async (c) => {
 
   const clientId = c.env.GITHUB_CLIENT_ID;
   const clientSecret = c.env.GITHUB_CLIENT_SECRET;
-  
+
   if (!clientId || !clientSecret) return apiResponse.error(c, 'GitHub OAuth not configured', 500);
 
   const db = createDb(c.env.DB);
@@ -91,7 +91,7 @@ oauthRoutes.get('/github/callback', async (c) => {
         const signupEnabled = await db.selectFrom('options').select('value').where('name', '=', 'flare:signup_enabled').executeTakeFirst();
         const defaultRole = await db.selectFrom('options').select('value').where('name', '=', 'flare:signup_default_role').executeTakeFirst();
         const domainRulesRaw = await db.selectFrom('options').select('value').where('name', '=', 'flare:signup_domain_rules').executeTakeFirst();
-        
+
         const isEnabled = signupEnabled?.value === 'true';
         const roleDefault = defaultRole?.value || 'editor';
         const domainRules = JSON.parse(domainRulesRaw?.value || '{}') as Record<string, string>;

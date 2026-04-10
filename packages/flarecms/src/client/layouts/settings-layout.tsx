@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/react';
-import { $router, navigate } from '../store/router';
+import { $router, navigate, type RouteName } from '../store/router';
 import {
   Settings as SettingsIcon,
   Search as SearchIcon,
@@ -47,7 +47,7 @@ export function SettingsSidebar() {
                   ? 'bg-primary/5 text-primary'
                   : 'text-muted-foreground hover:bg-accent hover:text-foreground',
               )}
-              onClick={() => navigate(item.route)}
+              onClick={() => navigate(item.route as RouteName)}
             >
               {isActive && (
                 <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-primary rounded-full" />

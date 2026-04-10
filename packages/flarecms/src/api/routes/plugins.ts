@@ -18,11 +18,33 @@ pluginRoutes.get('/', async (c) => {
 		c,
 		plugins.map((p: any) => ({
 			id: p.id,
+			name: p.name,
 			version: p.version,
 			capabilities: p.capabilities,
 			routes: manager.getRoutes?.(p.id) ?? [],
+			adminPages: p.adminPages ?? [],
+			adminWidgets: p.adminWidgets ?? [],
 		})),
 	);
+});
+
+/**
+ * POST /api/plugins/:id/admin
+ * Handles administrative UI interactions via Block Kit.
+ */
+pluginRoutes.post('/:id/admin', async (c) => {
+	const manager = c.get('pluginManager' as any);
+	if (!manager) return apiResponse.error(c, 'Plugin system not initialized');
+
+	const pluginId = c.req.param('id');
+	const interaction = await c.req.json().catch(() => ({}));
+
+	try {
+		const result = await manager.invokeAdmin(pluginId, interaction);
+		return apiResponse.ok(c, result);
+	} catch (err: any) {
+		return apiResponse.error(c, err.message, 400);
+	}
 });
 
 /**
@@ -30,7 +52,7 @@ pluginRoutes.get('/', async (c) => {
  * Invokes a specific custom route exposed by a plugin.
  */
 pluginRoutes.post('/:id/routes/:name', async (c) => {
-	const manager = c.get('pluginManager' as any);
+	const manager = c.get('pluginManager');
 	if (!manager) return apiResponse.error(c, 'Plugin system not initialized');
 
 	const pluginId = c.req.param('id');

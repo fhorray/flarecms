@@ -14,7 +14,9 @@
     "hono": "latest",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.30.3"
+    "react-router-dom": "^6.30.3",
+    "@flarecms/plugin-ui-kit-tester": "workspace:*",
+    "@flarecms/plugin-webhooks": "workspace:*"
   },
   "devDependencies": {
     "@hono/vite-build": "^1.11.1",

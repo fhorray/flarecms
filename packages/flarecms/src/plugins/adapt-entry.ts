@@ -6,6 +6,7 @@ import type {
 	ResolvedHook,
 	FlareRouteEntry,
 	ResolvedRoute,
+	FlarePlugin,
 } from './types.js';
 
 /**
@@ -42,17 +43,21 @@ function resolveRoute(route: FlareRouteEntry): ResolvedRoute {
 }
 
 /**
- * Adatps a standard plugin definition and descriptor into a ResolvedPlugin.
- * This is used for trusted plugins running in-process.
+ * Adapts any plugin input (Descriptor or full Plugin object) into a ResolvedPlugin.
  */
 export function adaptEntry(
-	definition: FlarePluginDefinition,
-	descriptor: PluginDescriptor,
+	input: PluginDescriptor | FlarePlugin,
 ): ResolvedPlugin {
+	const definition = input as FlarePluginDefinition;
+	const descriptor = input as PluginDescriptor;
+
+	const id = descriptor.id;
+	const version = descriptor.version;
+
 	const hooks: Record<string, ResolvedHook> = {};
 	if (definition.hooks) {
 		for (const [name, entry] of Object.entries(definition.hooks)) {
-			hooks[name] = resolveHook(entry, descriptor.id);
+			hooks[name] = resolveHook(entry, id);
 		}
 	}
 
@@ -73,12 +78,16 @@ export function adaptEntry(
 	}
 
 	return {
-		id: descriptor.id,
-		version: descriptor.version,
-		capabilities: descriptor.capabilities ?? [],
-		allowedHosts: descriptor.allowedHosts ?? [],
+		id,
+		name: descriptor.name || id,
+		version,
+		capabilities: descriptor.capabilities || definition.capabilities || [],
+		allowedHosts: descriptor.allowedHosts || definition.allowedHosts || [],
 		storage,
 		hooks,
 		routes,
+		admin: definition.admin,
+		adminPages: descriptor.adminPages ?? [],
+		adminWidgets: descriptor.adminWidgets ?? [],
 	};
 }

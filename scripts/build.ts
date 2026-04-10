@@ -69,6 +69,18 @@ async function runBuild() {
     process.exit(1);
   }
 
+  // Generate Type Declarations
+  console.log("📝 Generating type declarations...");
+  try {
+    execSync("bun x tsc --declaration --emitDeclarationOnly --outDir dist", { 
+      cwd: packageDir, 
+      stdio: "inherit" 
+    });
+  } catch (err) {
+    console.error("❌ Type declaration generation failed");
+    process.exit(1);
+  }
+
   console.log(`✅ Build complete! Artifacts generated in ${distDir}`);
 }
 
