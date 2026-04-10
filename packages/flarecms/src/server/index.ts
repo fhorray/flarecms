@@ -11,8 +11,11 @@ import { magicRoutes } from '../api/routes/magic';
 import { oauthRoutes } from '../api/routes/oauth';
 import { settingsRoutes } from '../api/routes/settings';
 import { mcpRoutes } from '../api/routes/mcp';
+import { pluginRoutes } from '../api/routes/plugins';
+import { pluginMiddleware } from '../plugins/middleware';
 import { apiResponse } from '../api/lib/response';
 import type { Bindings, Variables } from '../types';
+import type { PluginDescriptor, SandboxRunnerFactory } from '../plugins/types';
 
 /**
  * Creates the modular FlareCMS API router.
@@ -21,12 +24,17 @@ import type { Bindings, Variables } from '../types';
  * @example
  * app.route('/api', createFlareAPI({ base: '/admin' }));
  */
-export function createFlareAPI(options: { base?: string } = {}) {
+export function createFlareAPI(options: { 
+  base?: string;
+  plugins?: PluginDescriptor[];
+  sandboxRunner?: SandboxRunnerFactory;
+} = {}) {
   const base = options.base || '/admin';
   const api = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
   // Middlewares
   api.use('*', corsMiddleware);
+  api.use('*', pluginMiddleware(options.plugins));
   api.use('*', async (c, next) => {
     // Collect reserved slugs from base and standard system paths
     const adminPrefix = base.replace(/^\//, '') || 'admin';
@@ -59,6 +67,7 @@ export function createFlareAPI(options: { base?: string } = {}) {
   api.route('/oauth', oauthRoutes);
   api.route('/settings', settingsRoutes);
   api.route('/mcp', mcpRoutes);
+  api.route('/plugins', pluginRoutes);
   
   api.get('/health', (c) => apiResponse.ok(c, { status: 'ok' }));
 

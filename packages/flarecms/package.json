@@ -47,7 +47,8 @@
     },
     "./auth": "./dist/auth/index.js",
     "./db": "./dist/db/index.js",
-    "./cli": "./dist/cli/index.js"
+    "./cli": "./dist/cli/index.js",
+    "./plugins": "./dist/plugins/index.js"
   },
   "dependencies": {},
   "devDependencies": {

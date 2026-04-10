@@ -11,8 +11,42 @@ export interface Database {
   fc_oauth_accounts: OAuthAccountsTable;
   fc_verification_tokens: VerificationTokensTable;
   fc_device_codes: DeviceCodesTable;
+  fc_plugins: PluginsTable;
+  _fc_plugin_storage: PluginStorageTable;
+  _fc_cron_tasks: CronTasksTable;
   // This helps typescript understand that we can have arbitrary string tables for dynamic content
   [tableName: string]: any; 
+}
+
+export interface PluginsTable {
+  id: string;
+  plugin_id: string;
+  version: string;
+  status: string;
+  capabilities: string | null; // JSON array
+  allowed_hosts: string | null; // JSON array
+  storage_config: string | null; // JSON object
+  manifest: string | null; // JSON manifest
+  backend_code: string | null; // JS bundle
+  installed_at: ColumnType<string, string | undefined, never>;
+  activated_at: string | null;
+}
+
+export interface PluginStorageTable {
+  plugin_id: string;
+  collection: string;
+  id: string;
+  data: string;
+  updated_at: ColumnType<string, string | undefined, string>;
+}
+
+export interface CronTasksTable {
+  id: string;
+  plugin_id: string;
+  schedule: string;
+  last_run_at: string | null;
+  next_run_at: string | null;
+  enabled: ColumnType<number, number | undefined, number>;
 }
 
 export interface OptionsTable {

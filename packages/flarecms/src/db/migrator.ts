@@ -3,10 +3,12 @@ import type { FlareDb } from './index';
 
 import * as initialSchema from './migrations/001_initial_schema';
 import * as authTables from './migrations/002_auth_tables';
+import * as pluginTables from './migrations/003_plugins';
 
 const STATIC_MIGRATIONS: Record<string, any> = {
   '001_initial_schema': initialSchema,
   '002_auth_tables': authTables,
+  '003_plugins': pluginTables,
 };
 
 /**

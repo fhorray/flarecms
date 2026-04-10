@@ -1,0 +1,23 @@
+{
+  "name": "playground",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-04-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "playground-db",
+      "database_id": "your-database-id"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "your-kv-id"
+    }
+  ]
+}

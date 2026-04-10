@@ -109,18 +109,30 @@ contentRoutes.post('/:collection', async (c) => {
   const slug = await ensureUniqueSlug(db, collectionName, baseSlug);
   const status = data.status || 'draft';
 
-  const doc = {
+  let doc = {
     ...data,
     id,
     slug,
     status,
   };
 
+  const pluginManager = c.get('pluginManager' as any);
+  if (pluginManager) {
+    doc = await pluginManager.runContentBeforeSave(doc, collectionName, true);
+  }
+
   try {
     await db.insertInto(`ec_${collectionName}` as any)
       .values(doc)
       .execute();
-    return apiResponse.created(c, { id, slug });
+
+    if (pluginManager) {
+      c.executionCtx.waitUntil(
+        pluginManager.runContentAfterSave(doc, collectionName, true)
+      );
+    }
+
+    return apiResponse.created(c, { id, slug: doc.slug });
   } catch (e: any) {
     return apiResponse.error(c, `Failed query: ${e.message}`);
   }
@@ -145,15 +157,29 @@ contentRoutes.put('/:collection/:id', async (c) => {
     finalData.slug = uniqueSlug;
   }
 
+  const pluginManager = c.get('pluginManager' as any);
+  let docToSave = {
+    ...finalData,
+    updated_at: sql`CURRENT_TIMESTAMP`
+  };
+
+  if (pluginManager) {
+    docToSave = await pluginManager.runContentBeforeSave(docToSave, collectionName, false);
+  }
+
   try {
     await db.updateTable(`ec_${collectionName}` as any)
-      .set({
-        ...finalData,
-        updated_at: sql`CURRENT_TIMESTAMP`
-      })
+      .set(docToSave)
       .where('id', '=', id)
       .execute();
-    return apiResponse.ok(c, { id, success: true, slug: finalData.slug });
+
+    if (pluginManager) {
+      c.executionCtx.waitUntil(
+        pluginManager.runContentAfterSave(docToSave, collectionName, false)
+      );
+    }
+
+    return apiResponse.ok(c, { id, success: true, slug: docToSave.slug });
   } catch (e: any) {
     return apiResponse.error(c, e.message);
   }
@@ -164,10 +190,23 @@ contentRoutes.delete('/:collection/:id', async (c) => {
   const id = c.req.param('id');
   const db = createDb(c.env.DB);
 
+  const pluginManager = c.get('pluginManager' as any);
+  if (pluginManager) {
+    const allowed = await pluginManager.runContentBeforeDelete(id, collectionName);
+    if (!allowed) return apiResponse.error(c, 'Deletion prevented by plugin', 403);
+  }
+
   try {
     await db.deleteFrom(`ec_${collectionName}` as any)
       .where('id', '=', id)
       .execute();
+
+    if (pluginManager) {
+      c.executionCtx.waitUntil(
+        pluginManager.runContentAfterDelete(id, collectionName)
+      );
+    }
+
     return apiResponse.ok(c, { success: true });
   } catch (e: any) {
     return apiResponse.error(c, e.message);

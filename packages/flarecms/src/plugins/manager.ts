@@ -1,0 +1,81 @@
+import { HookPipeline } from './hooks.js';
+import { PluginRouteRegistry, type InvokeRouteOptions } from './routes.js';
+import type { ResolvedPlugin } from './types.js';
+import type { FlareDb } from '../db/index.js';
+
+/**
+ * PluginManager is the central orchestrator for the FlareCMS plugin system.
+ * It coordinates hook execution, route handling, and plugin lifecycle.
+ */
+export class PluginManager {
+	private plugins: ResolvedPlugin[] = [];
+	private hookPipeline: HookPipeline;
+	private routeRegistry: PluginRouteRegistry;
+	private db: FlareDb;
+	private siteInfo: { name: string; url: string; locale: string };
+
+	constructor(
+		plugins: ResolvedPlugin[],
+		db: FlareDb,
+		siteInfo: { name: string; url: string; locale: string },
+	) {
+		this.plugins = plugins;
+		this.db = db;
+		this.siteInfo = siteInfo;
+
+		// Initialize sub-systems
+		this.hookPipeline = new HookPipeline(plugins, db, siteInfo);
+		this.routeRegistry = new PluginRouteRegistry(db, siteInfo);
+
+		// Register all plugin routes
+		for (const plugin of plugins) {
+			this.routeRegistry.register(plugin);
+		}
+	}
+
+	// ── Hook Accessors ──
+
+	async runContentBeforeSave(
+		content: Record<string, unknown>,
+		collection: string,
+		isNew: boolean,
+	): Promise<Record<string, unknown>> {
+		return this.hookPipeline.runContentBeforeSave(content, collection, isNew);
+	}
+
+	async runContentAfterSave(
+		content: Record<string, unknown>,
+		collection: string,
+		isNew: boolean,
+	): Promise<void> {
+		return this.hookPipeline.runContentAfterSave(content, collection, isNew);
+	}
+
+	async runContentBeforeDelete(id: string, collection: string): Promise<boolean> {
+		return this.hookPipeline.runContentBeforeDelete(id, collection);
+	}
+
+	async runContentAfterDelete(id: string, collection: string): Promise<void> {
+		return this.hookPipeline.runContentAfterDelete(id, collection);
+	}
+
+	// ── Route Accessors ──
+
+	async invokeRoute(pluginId: string, routeName: string, options: InvokeRouteOptions): Promise<unknown> {
+		return this.routeRegistry.invoke(pluginId, routeName, options);
+	}
+
+	/**
+	 * Returns the list of active plugins and their basic info.
+	 */
+	getActivePlugins(): ResolvedPlugin[] {
+		return this.plugins;
+	}
+
+	/**
+	 * Checks if a specific plugin is loaded and active.
+	 */
+	isActive(pluginId: string): boolean {
+		return this.plugins.some((p) => p.id === pluginId);
+	}
+}

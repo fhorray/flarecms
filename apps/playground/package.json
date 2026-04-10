@@ -1,0 +1,30 @@
+{
+  "name": "playground",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "bun run build && wrangler deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+  },
+  "dependencies": {
+    "flarecms": "workspace:*",
+    "hono": "latest",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.3"
+  },
+  "devDependencies": {
+    "@hono/vite-build": "^1.11.1",
+    "@hono/vite-dev-server": "^0.25.1",
+    "@tailwindcss/vite": "^4.2.2",
+    "@types/react": "^18.3.28",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "tailwindcss": "^4.2.2",
+    "vite": "^6.4.2",
+    "wrangler": "^4.81.1"
+  }
+}
