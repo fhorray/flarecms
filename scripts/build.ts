@@ -24,6 +24,7 @@ async function runBuild() {
     "./src/cli/index.ts",
     "./src/cli/commands.ts",
     "./src/cli/mcp.ts",
+    "./src/plugins/index.ts",
   ];
 
   // Zero Production Dependencies Strategy:

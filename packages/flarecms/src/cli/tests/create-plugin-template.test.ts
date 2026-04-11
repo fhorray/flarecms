@@ -96,6 +96,7 @@ describe('CLI: createProjectCommand (Plugin Template)', () => {
     expect(playgroundSrc).not.toContain('{{');
     expect(playgroundSrc).toContain("import { createFlareAPI } from 'flarecms/server'");
     expect(playgroundSrc).toContain("app.route('/api', createFlareAPI({");
+    expect(playgroundSrc).toContain("if (url.pathname.includes('.') || url.pathname.startsWith('/@'))");
 
     // Verify Playground client (FRONTEND ALIGNMENT CHECK)
     const playgroundClient = readFileSync(resolve(testDir, 'playground/src/client.tsx'), 'utf-8');
@@ -126,6 +127,10 @@ describe('CLI: createProjectCommand (Plugin Template)', () => {
       
       const pkgContent = readFileSync(resolve(testProdDir, 'playground/package.json'), 'utf-8');
       expect(pkgContent).toContain('"flarecms": "latest"');
+
+      // Verify wrangler.jsonc (INFRASTRUCTURE CHECK)
+      const wranglerContent = readFileSync(resolve(testProdDir, 'playground/wrangler.jsonc'), 'utf-8');
+      expect(wranglerContent).toContain('"name": "test-prod-plugin-playground"');
     } finally {
       if (existsSync(testProdDir)) rmSync(testProdDir, { recursive: true, force: true });
       mockTemplatesMissing = false;
