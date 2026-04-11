@@ -9,7 +9,19 @@ interface BlockFormProps {
 }
 
 export function BlockForm({ block, onAction }: BlockFormProps) {
-  const [formData, setFormData] = useState<Record<string, any>>({});
+  // Initialize form data with block values/defaults
+  const [formData, setFormData] = useState<Record<string, any>>(() => {
+    const initial: Record<string, any> = {};
+    const collectValues = (blks: any[]) => {
+      blks.forEach((b) => {
+        if (b.id && b.value !== undefined) initial[b.id] = b.value;
+        if (b.id && b.defaultValue !== undefined) initial[b.id] = b.defaultValue;
+        if (b.blocks) collectValues(b.blocks);
+      });
+    };
+    if (block.blocks) collectValues(block.blocks);
+    return initial;
+  });
 
   const handleInputChange = (id: string, value: any) => {
     setFormData((prev) => ({ ...prev, [id]: value }));

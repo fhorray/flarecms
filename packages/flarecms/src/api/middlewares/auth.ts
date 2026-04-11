@@ -34,6 +34,7 @@ export const authMiddleware = async (c: Context, next: Next) => {
     return next();
   }
 
+  if (!c.env?.DB) return await next();
   const db = createDb(c.env.DB);
 
   // 1. Try Token Auth (PATs)
@@ -146,6 +147,7 @@ export const setupMiddleware = async (c: Context, next: Next) => {
   if (path.includes('/setup')) return next();
 
 
+  if (!c.env?.DB) return await next();
   try {
     const db = createDb(c.env.DB);
     const setupComplete = await db.selectFrom('options')

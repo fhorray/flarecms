@@ -30,7 +30,7 @@ export function StripePaymentLinksView({ productId, productName, links = [], pri
   };
 
   return (
-    <div className="stripe-container space-y-10 animate-in fade-in slide-in-from-left-6 duration-700">
+    <div className="space-y-10 animate-in fade-in slide-in-from-left-6 duration-700">
       {/* Header with Back Button */}
       <div className="flex flex-col gap-6">
         <button 

@@ -5,7 +5,7 @@
     "paths": {
       "@/*": ["./src/client/*"]
     },
-    "types": ["@cloudflare/workers-types"]
+    "types": ["@cloudflare/workers-types", "node", "bun"]
   },
   "include": ["src"]
 }

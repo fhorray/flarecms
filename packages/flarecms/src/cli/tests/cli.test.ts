@@ -4,7 +4,7 @@ import { rmSync, existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
 function runCLI(args: string[], cwd: string = process.cwd()) {
-  const cliPath = resolve(__dirname, "../src/index.ts");
+  const cliPath = resolve(__dirname, "../index.ts");
   return spawnSync("bun", [cliPath, ...args], { cwd, encoding: "utf-8" });
 }
 
@@ -27,7 +27,7 @@ describe("FlareCMS CLI Scaffolder", () => {
   test("CLI prints unknown command message for invalid command", () => {
     const result = runCLI(["invalid-command"]);
     expect(result.status).not.toBe(0); // Should exit with error code 1
-    expect(result.stdout + result.stderr).toContain("Unknown command. Available commands: create");
+    expect(result.stdout + result.stderr).toContain("Unknown command. Available commands: create, plugin create, mcp");
   });
 
   test("CLI renders prompts successfully for create command", () => {

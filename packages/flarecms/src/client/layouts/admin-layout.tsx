@@ -31,7 +31,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           <div className="flex w-full items-center gap-4 px-6">
             <SidebarTrigger className="size-8 text-muted-foreground hover:text-foreground transition-colors" />
 
-            <Separator orientation="vertical" className="h-4 bg-border" />
+            <Separator orientation="vertical" className="h-8 bg-border" />
 
             <div className="flex flex-col">
               <div className="flex items-center gap-2 text-muted-foreground text-[10px] font-medium uppercase tracking-wider leading-none mb-0.5">
@@ -68,15 +68,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 >
                   <BellIcon className="size-4" />
                   <span className="absolute top-2 right-2 size-2 bg-primary rounded-full border-2 border-background"></span>
-                </Button>
-                <Separator orientation="vertical" className="h-4 mx-1" />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="gap-2 text-[10px] font-semibold uppercase tracking-wider text-primary hover:bg-primary/5 h-8 px-4"
-                >
-                  Live Preview
-                  <ExternalLinkIcon className="size-3.5" />
                 </Button>
               </div>
             </div>

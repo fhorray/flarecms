@@ -3,7 +3,7 @@ import { promisify } from "node:util";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { downloadTemplate } from "giget";
-import { existsSync, readFileSync, writeFileSync, cpSync, mkdirSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, cpSync, mkdirSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { runMcpBridge } from "./mcp.ts";
 
@@ -188,6 +188,112 @@ export async function createProjectCommand() {
 
   } catch (error) {
     s.stop("Failed to create project");
+    p.log.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
+}
+
+export async function createPluginCommand() {
+  console.clear();
+  console.log(`\n  ${pc.bold(pc.yellow("— F L A R E C M S —"))}\n`);
+  p.intro("Create a new FlareCMS Plugin");
+
+  const rawName = await p.text({
+    message: "Plugin name?",
+    placeholder: "my-awesome-plugin",
+    validate: (value) => {
+      if (!value) return "Plugin name is required";
+      return undefined;
+    },
+  });
+
+  if (p.isCancel(rawName)) {
+    p.cancel("Operation cancelled.");
+    process.exit(0);
+  }
+
+  const pluginId = (rawName as string).toLowerCase().replace(/[^a-z0-9]/g, "-");
+  const pluginPackageName = `@flarecms/plugin-${pluginId}`;
+  const pluginNameHuman = (rawName as string)
+    .split(/[-_]/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+
+  const playgroundName = `${pluginId}-playground`;
+  const rootDir = process.cwd();
+
+  const currentFilePath = fileURLToPath(import.meta.url);
+  const cliDir = resolve(currentFilePath, "..");
+  const localTemplatesRoot = resolve(cliDir, "..", "..", "..", "..", "templates");
+  const templateBase = resolve(localTemplatesRoot, "plugin-development");
+
+  if (!existsSync(templateBase)) {
+    p.log.error(`Template not found at ${templateBase}. This command works only within the FlareCMS monorepo for now.`);
+    process.exit(1);
+  }
+
+  const paths = {
+    targetPlugin: resolve(rootDir, "plugins", pluginId),
+    targetPlayground: resolve(rootDir, "apps", playgroundName),
+  };
+
+  if (existsSync(paths.targetPlugin) || existsSync(paths.targetPlayground)) {
+    p.log.error(`Folders already exist for ${pc.cyan(pluginId)}. Aborting.`);
+    process.exit(1);
+  }
+
+  const s = p.spinner();
+  s.start(`Creating ${pc.cyan(pluginNameHuman)}...`);
+
+  try {
+    // 1. Copy Plugin Template
+    cpSync(resolve(templateBase, "starter-plugin"), paths.targetPlugin, { recursive: true });
+
+    // 2. Copy Playground Template
+    cpSync(resolve(templateBase, "starter-playground"), paths.targetPlayground, { recursive: true });
+
+    // 3. Replace placeholders
+    const placeholders = {
+      "{{PLUGIN_NAME}}": pluginPackageName,
+      "{{PLUGIN_ID}}": pluginId,
+      "{{PLUGIN_NAME_HUMAN}}": pluginNameHuman,
+      "{{PLUGIN_PACKAGE_NAME}}": pluginPackageName,
+      "{{PLAYGROUND_NAME}}": playgroundName,
+    };
+
+    const processFiles = (dir: string) => {
+      const entries = readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const fullPath = resolve(dir, entry.name);
+        if (entry.isDirectory()) {
+          processFiles(fullPath);
+        } else {
+          let content = readFileSync(fullPath, "utf8");
+          let changed = false;
+          for (const [placeholder, value] of Object.entries(placeholders)) {
+            if (content.includes(placeholder)) {
+              content = content.replaceAll(placeholder, value);
+              changed = true;
+            }
+          }
+          if (changed) writeFileSync(fullPath, content);
+        }
+      }
+    };
+
+    processFiles(paths.targetPlugin);
+    processFiles(paths.targetPlayground);
+
+    s.stop("Plugin created!");
+
+    p.note(
+      `cd apps/${playgroundName}\nbun install\nbun dev`,
+      "Next steps for development"
+    );
+
+    p.outro(`${pc.green("Success!")} Developed your plugin at ${pc.cyan(`plugins/${pluginId}`)}`);
+  } catch (error) {
+    s.stop("Failed to generate plugin");
     p.log.error(error instanceof Error ? error.message : String(error));
     process.exit(1);
   }

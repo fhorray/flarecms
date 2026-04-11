@@ -53,6 +53,8 @@ export function createFlareAPI(options: {
     await next();
   });
 
+  api.get('/health', (c) => apiResponse.ok(c, { status: 'ok' }));
+
   api.use('/*', setupMiddleware);
   api.use('/*', authMiddleware);
 
@@ -68,8 +70,6 @@ export function createFlareAPI(options: {
   api.route('/settings', settingsRoutes);
   api.route('/mcp', mcpRoutes);
   api.route('/plugins', pluginRoutes);
-  
-  api.get('/health', (c) => apiResponse.ok(c, { status: 'ok' }));
 
   return api;
 }

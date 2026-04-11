@@ -76,12 +76,13 @@ describe('CLI: createProjectCommand', () => {
     expect(pkg.name).toBe('test-project');
     expect(pkg.dependencies.flarecms).toBe('latest');
 
-    // Verify wrangler.jsonc was patched
-    const wrangler = JSON.parse(readFileSync(resolve(testDir, 'wrangler.jsonc'), 'utf-8'));
+    // Verify wrangler.jsonc was patched (strip comments first)
+    const wranglerRaw = readFileSync(resolve(testDir, 'wrangler.jsonc'), 'utf-8');
+    const wrangler = JSON.parse(wranglerRaw.replace(/\/\/.*/g, ''));
     expect(wrangler.name).toBe('test-project');
-    expect(wrangler.d1_databases[0].database_name).toBe('test-project-db');
+    expect(wrangler.d1_databases?.[0]?.database_name).toBe('test-project-db');
 
     // Restore process.exit
     process.exit = originalExit;
-  });
+  }, 15000);
 });

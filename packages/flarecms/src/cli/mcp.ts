@@ -179,7 +179,7 @@ export async function runMcpBridge(options: McpOptions) {
   const decoder = new TextDecoder();
   let buffer = "";
 
-  for await (const chunk of Bun.stdin.stream()) {
+  for await (const chunk of (Bun.stdin.stream() as any)) {
     buffer += decoder.decode(chunk);
     let lines = buffer.split("\n");
     buffer = lines.pop() || "";

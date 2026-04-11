@@ -45,7 +45,7 @@ export function createPluginContext(options: ContextFactoryOptions): PluginConte
 	const kv: PluginKV = {
 		get: async (key) => {
 			const res = await db
-				.selectFrom('_fc_plugin_storage' as any)
+				.selectFrom('_fc_plugin_storage')
 				.select('data')
 				.where('plugin_id', '=', pluginId)
 				.where('collection', '=', '_kv')
@@ -64,7 +64,7 @@ export function createPluginContext(options: ContextFactoryOptions): PluginConte
 		},
 		delete: async (key) => {
 			const res = await db
-				.deleteFrom('_fc_plugin_storage' as any)
+				.deleteFrom('_fc_plugin_storage')
 				.where('plugin_id', '=', pluginId)
 				.where('collection', '=', '_kv')
 				.where('id', '=', key)
@@ -73,7 +73,7 @@ export function createPluginContext(options: ContextFactoryOptions): PluginConte
 		},
 		list: async (prefix) => {
 			let query = db
-				.selectFrom('_fc_plugin_storage' as any)
+				.selectFrom('_fc_plugin_storage')
 				.select(['id', 'data'])
 				.where('plugin_id', '=', pluginId)
 				.where('collection', '=', '_kv');
@@ -104,7 +104,7 @@ export function createPluginContext(options: ContextFactoryOptions): PluginConte
 				return {
 					get: async (id: string) => {
 						const res = await db
-							.selectFrom('_fc_plugin_storage' as any)
+							.selectFrom('_fc_plugin_storage')
 							.select('data')
 							.where('plugin_id', '=', pluginId)
 							.where('collection', '=', collection)
@@ -123,7 +123,7 @@ export function createPluginContext(options: ContextFactoryOptions): PluginConte
 					},
 					delete: async (id: string) => {
 						const res = await db
-							.deleteFrom('_fc_plugin_storage' as any)
+							.deleteFrom('_fc_plugin_storage')
 							.where('plugin_id', '=', pluginId)
 							.where('collection', '=', collection)
 							.where('id', '=', id)
@@ -133,7 +133,7 @@ export function createPluginContext(options: ContextFactoryOptions): PluginConte
 					query: async (opts?: { limit?: number; cursor?: string }) => {
 						const limit = opts?.limit ?? 20;
 						let query = db
-							.selectFrom('_fc_plugin_storage' as any)
+							.selectFrom('_fc_plugin_storage')
 							.select(['id', 'data'])
 							.where('plugin_id', '=', pluginId)
 							.where('collection', '=', collection)
@@ -148,11 +148,11 @@ export function createPluginContext(options: ContextFactoryOptions): PluginConte
 					},
 					count: async () => {
 						const res = (await db
-							.selectFrom('_fc_plugin_storage' as any)
+							.selectFrom('_fc_plugin_storage')
 							.select(db.fn.count('id').as('count'))
 							.where('plugin_id', '=', pluginId)
 							.where('collection', '=', collection)
-							.executeTakeFirst()) as any;
+							.executeTakeFirst());
 						return Number(res?.count ?? 0);
 					},
 				};
@@ -166,7 +166,7 @@ export function createPluginContext(options: ContextFactoryOptions): PluginConte
 		content = {
 			get: async (col, id) => {
 				const res = await db
-					.selectFrom(`ec_${col}` as any)
+					.selectFrom(`ec_${col}`)
 					.selectAll()
 					.where('id', '=', id)
 					.executeTakeFirst();
@@ -175,7 +175,7 @@ export function createPluginContext(options: ContextFactoryOptions): PluginConte
 			list: async (col, opts) => {
 				const limit = opts?.limit ?? 20;
 				const res = await db
-					.selectFrom(`ec_${col}` as any)
+					.selectFrom(`ec_${col}`)
 					.selectAll()
 					.where('status', '!=', 'deleted')
 					.limit(limit)
@@ -186,15 +186,15 @@ export function createPluginContext(options: ContextFactoryOptions): PluginConte
 				if (!hasCap('write:content')) throw new Error('Capability write:content required');
 				// Note: Real implementation would use the internal content service to handle slugs etc.
 				// This is the bridge layer.
-				return await db.insertInto(`ec_${col}` as any).values(data).execute();
+				return await db.insertInto(`ec_${col}`).values(data).execute();
 			},
 			update: async (col, id, data) => {
 				if (!hasCap('write:content')) throw new Error('Capability write:content required');
-				return await db.updateTable(`ec_${col}` as any).set(data).where('id', '=', id).execute();
+				return await db.updateTable(`ec_${col}`).set(data).where('id', '=', id).execute();
 			},
 			delete: async (col, id) => {
 				if (!hasCap('write:content')) throw new Error('Capability write:content required');
-				return !!(await db.deleteFrom(`ec_${col}` as any).where('id', '=', id).execute());
+				return !!(await db.deleteFrom(`ec_${col}`).where('id', '=', id).execute());
 			},
 		};
 	}
@@ -235,7 +235,7 @@ export function createPluginContext(options: ContextFactoryOptions): PluginConte
 			},
 		};
 	}
-	
+
 	// ── Crypto Access ──
 	let crypto: any;
 	if (hasCap('crypto:encrypt')) {
@@ -285,11 +285,11 @@ async function encryptText(text: string, secret: string): Promise<string> {
 		key,
 		enc.encode(text)
 	);
-	
+
 	const combined = new Uint8Array(iv.length + encrypted.byteLength);
 	combined.set(iv);
 	combined.set(new Uint8Array(encrypted), iv.length);
-	
+
 	return btoa(String.fromCharCode(...combined));
 }
 
@@ -301,7 +301,7 @@ async function decryptText(ciphertext: string, secret: string): Promise<string> 
 	const combined = new Uint8Array(atob(ciphertext).split('').map(c => c.charCodeAt(0)));
 	const iv = combined.slice(0, 12);
 	const data = combined.slice(12);
-	
+
 	const key = await globalThis.crypto.subtle.importKey(
 		'raw',
 		enc.encode(secret.padEnd(32, '0').slice(0, 32)),
@@ -309,12 +309,12 @@ async function decryptText(ciphertext: string, secret: string): Promise<string> 
 		false,
 		['decrypt']
 	);
-	
+
 	const decrypted = await globalThis.crypto.subtle.decrypt(
 		{ name: 'AES-GCM', iv },
 		key,
 		data
 	);
-	
+
 	return new TextDecoder().decode(decrypted);
 }

@@ -118,7 +118,7 @@ contentRoutes.post('/:collection', async (c) => {
 
   const pluginManager = c.get('pluginManager');
   if (pluginManager) {
-    doc = await pluginManager.runContentBeforeSave(doc, collectionName, true);
+    doc = await pluginManager.runContentBeforeSave(doc, collectionName, true) as any;
   }
 
   try {
@@ -164,7 +164,7 @@ contentRoutes.put('/:collection/:id', async (c) => {
   };
 
   if (pluginManager) {
-    docToSave = await pluginManager.runContentBeforeSave(docToSave, collectionName, false);
+    docToSave = await pluginManager.runContentBeforeSave(docToSave, collectionName, false) as any;
   }
 
   try {

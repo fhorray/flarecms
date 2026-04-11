@@ -20,7 +20,7 @@ export class PluginManager {
 	) {
 		// Initialize sub-systems
 		this.hookPipeline = new HookPipeline(plugins, db, siteInfo);
-		this.routeRegistry = new PluginRouteRegistry(db, siteInfo);
+		this.routeRegistry = new PluginRouteRegistry(db, siteInfo, encryptionSecret);
 
 		// Register all plugin routes
 		for (const plugin of plugins) {

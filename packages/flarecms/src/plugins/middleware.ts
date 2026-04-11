@@ -21,6 +21,8 @@ export function pluginMiddleware(staticPlugins: (PluginDescriptor | FlarePlugin)
       return adaptEntry(p as FlarePlugin);
     });
 
+    if (!c.env?.DB) return await next();
+    
     const db = createDb(c.env.DB);
     const siteInfo = {
       name: 'FlareCMS',
@@ -28,7 +30,7 @@ export function pluginMiddleware(staticPlugins: (PluginDescriptor | FlarePlugin)
       locale: 'en',
     };
 
-    const encryptionSecret = (c.env as any).FLARE_ENCRYPTION_SECRET || (c.env as any).AUTH_SECRET;
+    const encryptionSecret = c.env.FLARE_ENCRYPTION_SECRET || c.env.AUTH_SECRET;
     const manager = new PluginManager(resolvedPlugins, db, siteInfo, encryptionSecret);
 
     // Set the manager in the context for other routes to use

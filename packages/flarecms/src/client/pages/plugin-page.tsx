@@ -22,10 +22,9 @@ export function PluginPage({ pluginId, page }: PluginPageProps) {
   const handleInteraction = useCallback(
     async (interaction: BlockInteraction) => {
       try {
-        const result = (await sendPluginInteraction(
-          pluginId,
-          interaction,
-        )) as { data: BlockResponse };
+        const result = (await sendPluginInteraction(pluginId, interaction)) as {
+          data: BlockResponse;
+        };
         const response = result.data;
 
         if (response.blocks) {

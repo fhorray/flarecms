@@ -26,6 +26,7 @@ import { PluginWidget } from '../components/plugin-widget';
 
 export function DashboardPage() {
   const { data: collections, loading } = useStore($collections);
+  const { data: plugins } = useStore($plugins);
 
   return (
     <div className="p-6 max-w-container mx-auto space-y-8">
@@ -68,6 +69,11 @@ export function DashboardPage() {
         <div className="flex items-center gap-2 border-l border-border/50 pl-6">
           <UserIcon className="size-3 text-green-400" />
           <span>1 user</span>
+        </div>
+
+        <div className="flex items-center gap-2 border-l border-border/50 pl-6">
+          <PuzzleIcon className="size-3 text-green-400" />
+          <span>{plugins?.length || 0} plugins</span>
         </div>
       </div>
 

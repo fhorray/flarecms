@@ -15,6 +15,7 @@ export type PluginCapability =
   | 'read:users'
   | 'email:send'
   | 'crypto:encrypt'
+  | 'crypto:decrypt'
   | 'storage:read'
   | 'storage:write'
   | 'storage:delete'

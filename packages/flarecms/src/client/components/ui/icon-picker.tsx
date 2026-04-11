@@ -46,6 +46,7 @@ interface IconPickerProps extends Omit<
   iconsList?: IconData[];
   categorized?: boolean;
   modal?: boolean;
+  children?: React.ReactNode;
 }
 
 const IconRenderer = React.memo(({ name }: { name: IconName }) => {
@@ -430,7 +431,7 @@ const IconPicker = React.forwardRef<
         onOpenChange={handleOpenChange}
         modal={modal}
       >
-        <PopoverTrigger asChild ref={ref} {...props}>
+        <PopoverTrigger ref={ref} {...props}>
           {children || (
             <Button variant="outline">
               {value || selectedIcon ? (

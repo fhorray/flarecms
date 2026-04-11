@@ -11,20 +11,22 @@ export interface InvokeRouteOptions {
  * PluginRouteRegistry manages custom HTTP routes exposed by plugins.
  */
 export class PluginRouteRegistry {
-	private routes: Map<string, Record<string, ResolvedRoute>> = new Map();
+	private plugins: Map<string, ResolvedPlugin> = new Map();
 	private db: FlareDb;
 	private siteInfo: { name: string; url: string; locale: string };
+	private encryptionSecret?: string;
 
-	constructor(db: FlareDb, siteInfo: { name: string; url: string; locale: string }) {
+	constructor(db: FlareDb, siteInfo: { name: string; url: string; locale: string }, encryptionSecret?: string) {
 		this.db = db;
 		this.siteInfo = siteInfo;
+		this.encryptionSecret = encryptionSecret;
 	}
 
 	/**
 	 * Registers all routes for a given plugin.
 	 */
 	register(plugin: ResolvedPlugin): void {
-		this.routes.set(plugin.id, plugin.routes);
+		this.plugins.set(plugin.id, plugin);
 	}
 
 	/**
@@ -35,12 +37,12 @@ export class PluginRouteRegistry {
 		routeName: string,
 		options: InvokeRouteOptions,
 	): Promise<unknown> {
-		const pluginRoutes = this.routes.get(pluginId);
-		if (!pluginRoutes) {
+		const plugin = this.plugins.get(pluginId);
+		if (!plugin) {
 			throw new Error(`Plugin "${pluginId}" not found or has no routes registered.`);
 		}
 
-		const route = pluginRoutes[routeName];
+		const route = plugin.routes[routeName];
 		if (!route) {
 			throw new Error(`Route "${routeName}" not found in plugin "${pluginId}".`);
 		}
@@ -49,19 +51,13 @@ export class PluginRouteRegistry {
 
 		const ctx = createPluginContext({
 			pluginId,
-			version: '0.0.0', // TODO: Lookup from registry
-			capabilities: [
-				'read:content',
-				'write:content',
-				'read:media',
-				'write:media',
-				'network:fetch',
-				'read:users',
-			], // Defaulting to full for in-process
-			allowedHosts: [],
-			storageCollections: [],
+			version: plugin.version,
+			capabilities: plugin.capabilities,
+			allowedHosts: plugin.allowedHosts,
+			storageCollections: Object.keys(plugin.storage),
 			db: this.db,
 			siteInfo: this.siteInfo,
+			encryptionSecret: this.encryptionSecret,
 		});
 
 		const routeCtx: RouteCtx = {
@@ -77,7 +73,7 @@ export class PluginRouteRegistry {
 	 * Gets all registered routes for a specific plugin.
 	 */
 	getRoutes(pluginId: string): string[] {
-		const pluginRoutes = this.routes.get(pluginId);
-		return pluginRoutes ? Object.keys(pluginRoutes) : [];
+		const plugin = this.plugins.get(pluginId);
+		return plugin ? Object.keys(plugin.routes) : [];
 	}
 }
