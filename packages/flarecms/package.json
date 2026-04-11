@@ -1,6 +1,6 @@
 {
   "name": "flarecms",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "license": "MIT",
   "description": "FlareCMS Monorepo: A lightweight CMS for the AI era.",
   "files": [
@@ -30,7 +30,9 @@
   "homepage": "https://flarecms.francy.dev",
   "scripts": {
     "build:style": "node ./scripts/prefix-css.mjs",
-    "build": "bun ../../scripts/build.ts"
+    "build": "bun ../../scripts/build.ts",
+    "prepublishOnly": "bun run scripts/prepare-publish.ts",
+    "postpublish": "bun run scripts/cleanup-publish.ts"
   },
   "type": "module",
   "main": "./dist/index.js",

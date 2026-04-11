@@ -142,36 +142,17 @@ async function main() {
     else if (versionType === "minor") newVersion = `${major}.${minor + 1}.0`;
     else if (versionType === "patch") newVersion = `${major}.${minor}.${patch + 1}`;
 
-    // 3. Create "Dev Mode" Persistence (Base for repo)
-    // We update the local version immediately in our memory object
+    // 3. Update version in memory and on disk (Permanent change)
     devModePkgJson = { ...originalPkgJson, version: newVersion };
+    await Bun.write(pkgPath, JSON.stringify(devModePkgJson, null, 2) + "\n");
+    s.message(`Version bumped to ${newVersion}`);
 
-    // 4. Create "Publish Mode" (Transformation for NPM)
-    // We deep clone to avoid polluting devModePkgJson
-    const publishPkgJson = JSON.parse(JSON.stringify(devModePkgJson));
-    s.message("Preparing distribution package...");
-    
-    // Transform all exports, bin, main, etc. from ./src/*.ts to ./dist/*.js
-    if (publishPkgJson.exports) publishPkgJson.exports = transformValue(publishPkgJson.exports);
-    if (publishPkgJson.bin) publishPkgJson.bin = transformValue(publishPkgJson.bin);
-    if (publishPkgJson.main) publishPkgJson.main = transformValue(publishPkgJson.main, "main");
-    if (publishPkgJson.module) publishPkgJson.module = transformValue(publishPkgJson.module, "module");
-    if (publishPkgJson.types) publishPkgJson.types = transformValue(publishPkgJson.types, "types");
-
-    // Re-verify 'dist' is the only thing included in the package
-    publishPkgJson.files = ["dist"];
-
-    // 5. Write "Publish Mode" to disk TEMPORARILY so build picks it up
-    await Bun.write(pkgPath, JSON.stringify(publishPkgJson, null, 2) + "\n");
-
-    // 6. Execute Build (Ensures fresh dist/ and types with the NEW version)
+    // 4. Execute Build (Ensures fresh dist/ and types with the NEW version)
     s.message(`Building FlareCMS CLI v${newVersion}...`);
-    // NOTE: This runs the package's own build script or we can run our root build script.
-    // Assuming root `bun run build` handles packages/cli or there's `bun run scripts/build.ts`
     await runCommand("bun", ["run", "../../scripts/build.ts"], packageDir);
     s.message("Library built successfully!");
 
-    // 7. NPM Publish
+    // 5. NPM Publish
     s.stop(pc.green(`Metadata prepared for v${newVersion}!`));
     p.log.info(`Broadcasting to NPM with tag '${pc.yellow(tag as string)}'...`);
     await runCommand("npm", ["publish", "--tag", tag as string, "--access", "public"], packageDir);

@@ -117,38 +117,65 @@ export async function createProjectCommand() {
       s.start("Injecting FlareCMS configuration...");
     }
 
-    const template = TEMPLATES[templateKey as keyof typeof TEMPLATES];
     const currentFilePath = fileURLToPath(import.meta.url);
     const cliDir = resolve(currentFilePath, "..");
     const localTemplatesRoot = resolve(cliDir, "..", "..", "..", "..", "templates");
-    const localTemplatePath = resolve(localTemplatesRoot, template.dir.split('/').pop() || '');
 
-    if (existsSync(localTemplatePath)) {
-      if (!existsSync(projectDir)) {
-        mkdirSync(projectDir, { recursive: true });
+    if (templateKey === 'plugin-development') {
+      // Setup as a standalone workspace
+      const pkgPath = resolve(projectDir, "package.json");
+      const rootPkg = {
+        name: projectName,
+        version: "0.1.0",
+        private: true,
+        workspaces: ["plugins/*", "apps/*"],
+        scripts: {
+          "dev": "bun --cwd apps/playground dev"
+        }
+      };
+      
+      // Ensure directory structure
+      mkdirSync(resolve(projectDir, "plugins"), { recursive: true });
+      mkdirSync(resolve(projectDir, "apps"), { recursive: true });
+
+      // Copy sub-templates correctly
+      cpSync(resolve(localTemplatesRoot, "plugin-development", "starter-plugin"), resolve(projectDir, "plugins", "starter-plugin"), { recursive: true });
+      cpSync(resolve(localTemplatesRoot, "plugin-development", "starter-playground"), resolve(projectDir, "apps", "playground"), { recursive: true });
+      
+      writeFileSync(pkgPath, JSON.stringify(rootPkg, null, 2));
+    } else {
+      const template = TEMPLATES[templateKey as keyof typeof TEMPLATES];
+      const localTemplatePath = resolve(localTemplatesRoot, template.dir.split('/').pop() || '');
+
+      if (existsSync(localTemplatePath)) {
+        if (!existsSync(projectDir)) {
+          mkdirSync(projectDir, { recursive: true });
+        }
+        cpSync(localTemplatePath, projectDir, { recursive: true });
+      } else if (templateKey !== 'nextjs') {
+        // Production flow: download from GitHub
+        const remoteSource = `github:fhorray/flarecms/${template.dir}`;
+        await downloadTemplate(remoteSource, {
+          dir: projectDir,
+          force: true,
+        });
       }
-      cpSync(localTemplatePath, projectDir, { recursive: true });
-    } else if (templateKey !== 'nextjs') {
-      // Production flow: download from GitHub
-      const remoteSource = `github:fhorray/flarecms/${template.dir}`;
-      await downloadTemplate(remoteSource, {
-        dir: projectDir,
-        force: true,
-      });
     }
 
-    // 1. Update package.json
-    const pkgPath = resolve(projectDir, "package.json");
-    if (existsSync(pkgPath)) {
-      const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
-      pkg.name = projectName;
-      pkg.version = "0.1.0";
-      // Ensure flarecms dependency is present
-      pkg.dependencies = pkg.dependencies || {};
-      pkg.dependencies["flarecms"] = "latest";
-      pkg.dependencies["hono"] = "latest";
+    // 1. Update package.json (skip if it's the root workspace package we just created)
+    if (templateKey !== 'plugin-development') {
+      const pkgPath = resolve(projectDir, "package.json");
+      if (existsSync(pkgPath)) {
+        const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
+        pkg.name = projectName;
+        pkg.version = "0.1.0";
+        // Ensure flarecms dependency is present
+        pkg.dependencies = pkg.dependencies || {};
+        pkg.dependencies["flarecms"] = "latest";
+        pkg.dependencies["hono"] = "latest";
 
-      writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
+        writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
+      }
     }
 
     // 2. Setup Wrangler logic
@@ -169,16 +196,18 @@ export async function createProjectCommand() {
         await execAsync("bun install", { cwd: projectDir });
         s.stop("Dependencies installed!");
 
-        s.start("Generating TypeScript bindings...");
-        try {
-          await execAsync("bun wrangler types", { cwd: projectDir });
-          s.stop("TypeScript bindings generated!");
-        } catch (err) {
-          s.stop("Failed to generate bindings (this is normal if wrangler.jsonc is incomplete)");
+        if (templateKey !== 'plugin-development') {
+          s.start("Generating TypeScript bindings...");
+          try {
+            await execAsync("bun wrangler types", { cwd: projectDir });
+            s.stop("TypeScript bindings generated!");
+          } catch (err) {
+            s.stop("Failed to generate bindings (this is normal if wrangler.jsonc is incomplete)");
+          }
         }
       } catch (err) {
         s.stop("Failed to install dependencies");
-        p.log.warn(`Run ${pc.cyan(`cd ${projectName} && bun install && bun cf-typegen`)} manually`);
+        p.log.warn(`Run ${pc.cyan(`cd ${projectName} && bun install`)} manually`);
       }
     }
 
