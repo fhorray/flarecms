@@ -1,4 +1,4 @@
-import type { FlarePluginDefinition } from './types.js';
+import type { FlarePluginDefinition } from './types';
 
 /**
  * definePlugin() Helper

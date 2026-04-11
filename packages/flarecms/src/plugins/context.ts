@@ -1,6 +1,6 @@
 import { sql } from 'kysely';
 import type { Headers } from '@cloudflare/workers-types';
-import type { FlareDb } from '../db/index.js';
+import type { FlareDb } from '../db/index';
 import type {
 	PluginContext,
 	PluginCapability,
@@ -11,7 +11,7 @@ import type {
 	PluginLogger,
 	PluginUsersAccess,
 	PluginEmailAccess,
-} from './types.js';
+} from './types';
 
 export interface ContextFactoryOptions {
 	pluginId: string;

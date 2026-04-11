@@ -1,4 +1,4 @@
-import type { PluginCapability, SerializedRequest } from '../types.js';
+import type { PluginCapability, SerializedRequest } from '../types';
 
 /**
  * Interface for the Cloudflare Worker Loader API.

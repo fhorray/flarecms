@@ -1,8 +1,8 @@
 import type { MiddlewareHandler } from 'hono';
-import { PluginManager } from './manager.js';
-import { adaptEntry } from './adapt-entry.js';
-import { createDb } from '../db/index.js';
-import type { FlarePlugin, PluginDescriptor } from './types.js';
+import { PluginManager } from './manager';
+import { adaptEntry } from './adapt-entry';
+import { createDb } from '../db/index';
+import type { FlarePlugin, PluginDescriptor } from './types';
 
 /**
  * Hono middleware to initialize the PluginManager.

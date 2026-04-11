@@ -1,8 +1,8 @@
-import { createPluginContext } from './context.js';
-import { HookPipeline } from './hooks.js';
-import { PluginRouteRegistry, type InvokeRouteOptions } from './routes.js';
-import type { ResolvedPlugin, BlockInteraction, BlockResponse } from './types.js';
-import type { FlareDb } from '../db/index.js';
+import { createPluginContext } from './context';
+import { HookPipeline } from './hooks';
+import { PluginRouteRegistry, type InvokeRouteOptions } from './routes';
+import type { ResolvedPlugin, BlockInteraction, BlockResponse } from './types';
+import type { FlareDb } from '../db/index';
 
 /**
  * PluginManager is the central orchestrator for the FlareCMS plugin system.

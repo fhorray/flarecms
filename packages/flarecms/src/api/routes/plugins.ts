@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
-import type { Bindings, Variables } from '../../types.js';
-import { apiResponse } from '../lib/response.js';
-import type { SerializedRequest } from '../../plugins/types.js';
+import type { Bindings, Variables } from '../../types';
+import { apiResponse } from '../lib/response';
+import type { SerializedRequest } from '../../plugins/types';
 
 export const pluginRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 

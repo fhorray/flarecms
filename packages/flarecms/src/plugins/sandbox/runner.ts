@@ -4,10 +4,10 @@ import type {
 	PluginManifest,
 	SandboxOptions,
 	SerializedRequest,
-} from '../types.js';
-import type { WorkerLoader, WorkerStub, PluginBridgeProps } from './types.js';
-import { generatePluginWrapper } from './wrapper.js';
-import { PluginBridge } from './bridge.js';
+} from '../types';
+import type { WorkerLoader, WorkerStub, PluginBridgeProps } from './types';
+import { generatePluginWrapper } from './wrapper';
+import { PluginBridge } from './bridge';
 
 /**
  * Sandboxed Plugin instance running in a Cloudflare Worker Isolate.

@@ -1,6 +1,6 @@
-import type { ResolvedPlugin, ResolvedHook, PluginContext } from './types.js';
-import { createPluginContext, type ContextFactoryOptions } from './context.js';
-import type { FlareDb } from '../db/index.js';
+import type { ResolvedPlugin, ResolvedHook, PluginContext } from './types';
+import { createPluginContext, type ContextFactoryOptions } from './context';
+import type { FlareDb } from '../db/index';
 
 /**
  * HookPipeline manages the registration and execution of hooks across all plugins.

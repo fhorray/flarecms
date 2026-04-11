@@ -1,0 +1,14 @@
+# FlareCMS Configuration Example
+# Copy this file to .dev.vars for local development
+
+# Master secret for session management and authentication
+# Generate a secure string (e.g., openssl rand -base64 32)
+AUTH_SECRET="your-auth-secret-here"
+
+# Dedicated secret for plugin data encryption (e.g., Stripe keys)
+# If not provided, the system will fall back to AUTH_SECRET, but
+# for better security, a unique key is recommended.
+FLARE_ENCRYPTION_SECRET="your-encryption-secret-here"
+
+# Load .env.development* files when running `wrangler dev`
+NEXTJS_ENV=development

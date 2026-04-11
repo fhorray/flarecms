@@ -1,4 +1,4 @@
-import type { PluginManifest } from '../types.js';
+import type { PluginManifest } from '../types';
 
 /**
  * Generates the JavaScript wrapper code that runs inside the Worker Isolate.
@@ -7,7 +7,7 @@ import type { PluginManifest } from '../types.js';
 export function generatePluginWrapper(manifest: PluginManifest): string {
 	return `
 import { WorkerEntrypoint } from 'cloudflare:workers';
-import plugin from './sandbox-plugin.js';
+import plugin from './sandbox-plugin';
 
 /**
  * Creates a proxied PluginContext that redirects calls to the Host BRIDGE.

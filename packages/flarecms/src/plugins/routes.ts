@@ -1,6 +1,6 @@
-import type { ResolvedPlugin, ResolvedRoute, RouteCtx, SerializedRequest } from './types.js';
-import { createPluginContext } from './context.js';
-import type { FlareDb } from '../db/index.js';
+import type { ResolvedPlugin, ResolvedRoute, RouteCtx, SerializedRequest } from './types';
+import { createPluginContext } from './context';
+import type { FlareDb } from '../db/index';
 
 export interface InvokeRouteOptions {
 	input: unknown;

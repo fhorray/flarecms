@@ -1,7 +1,7 @@
 import { WorkerEntrypoint } from 'cloudflare:workers';
 import { sql } from 'kysely';
-import { createDb } from '../../db/index.js';
-import type { PluginBridgeInterface, PluginBridgeProps, PluginBridgeEnv } from './types.js';
+import { createDb } from '../../db/index';
+import type { PluginBridgeInterface, PluginBridgeProps, PluginBridgeEnv } from './types';
 
 /**
  * PluginBridge is the RPC gateway that runs in the Host process.

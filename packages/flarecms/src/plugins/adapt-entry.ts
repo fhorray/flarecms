@@ -7,7 +7,7 @@ import type {
 	FlareRouteEntry,
 	ResolvedRoute,
 	FlarePlugin,
-} from './types.js';
+} from './types';
 
 /**
  * Normalizes a hook entry into a ResolvedHook.

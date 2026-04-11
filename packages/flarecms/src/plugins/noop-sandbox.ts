@@ -1,4 +1,4 @@
-import type { SandboxRunner, SandboxedPlugin, PluginManifest } from './types.js';
+import type { SandboxRunner, SandboxedPlugin, PluginManifest } from './types';
 
 /**
  * Error thrown when a sandboxed operation is attempted but no sandbox runner is available.

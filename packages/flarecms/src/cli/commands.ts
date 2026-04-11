@@ -24,6 +24,11 @@ const TEMPLATES = {
     description: "A pre-configured plugin template",
     dir: "templates/plugin-development",
   },
+  nextjs: {
+    name: "Next.js",
+    description: "A pre-configured Next.js template",
+    dir: "templates/nextjs-starter",
+  },
   // blog: {
   //   name: "Blog (Coming Soon)",
   //   description: "A pre-configured blog template",
