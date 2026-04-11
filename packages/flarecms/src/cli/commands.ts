@@ -19,16 +19,17 @@ const TEMPLATES = {
     description: "Unified single-process FlareCMS starter for Cloudflare Workers",
     dir: "templates/starter",
   },
-  blog: {
-    name: "Blog (Coming Soon)",
-    description: "A pre-configured blog template",
-    dir: "templates/blog",
+  "plugin-development": {
+    name: "Plugin Development",
+    description: "A pre-configured plugin template",
+    dir: "templates/plugin-development",
   },
-  nextjs: {
-    name: "Next.js (App Router)",
-    description: "Modern Next.js template with FlareCMS + Hono API",
-    dir: "templates/nextjs",
-  },
+  // blog: {
+  //   name: "Blog (Coming Soon)",
+  //   description: "A pre-configured blog template",
+  //   dir: "templates/blog",
+  // },
+
 } as const;
 
 export async function createProjectCommand() {
@@ -99,14 +100,14 @@ export async function createProjectCommand() {
   try {
     if (templateKey === 'nextjs') {
       s.stop("Starting Next.js setup...");
-      
+
       // 1. Run create-next-app
       const nextVersion = "15.1.0"; // Stable default, can be customized
       p.log.info(`${pc.cyan("Running:")} bun create next-app@${nextVersion} ${projectName} --typescript --tailwind --eslint --app --src-dir false --import-alias "@/*" --use-bun`);
-      
+
       try {
         await execAsync(`bun create next-app@${nextVersion} ${projectName} --typescript --tailwind --eslint --app --src-dir false --import-alias "@/*" --use-bun --yes`, {
-            env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1" }
+          env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1" }
         });
       } catch (err) {
         // Fallback or handle error
