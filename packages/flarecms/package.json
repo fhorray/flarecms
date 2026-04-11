@@ -1,6 +1,6 @@
 {
   "name": "flarecms",
-  "version": "0.2.3",
+  "version": "0.2.8",
   "license": "MIT",
   "description": "FlareCMS Monorepo: A lightweight CMS for the AI era.",
   "files": [

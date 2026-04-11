@@ -122,27 +122,120 @@ export async function createProjectCommand() {
     const localTemplatesRoot = resolve(cliDir, "..", "..", "..", "..", "templates");
 
     if (templateKey === 'plugin-development') {
-      // Setup as a standalone workspace
-      const pkgPath = resolve(projectDir, "package.json");
-      const rootPkg = {
-        name: projectName,
-        version: "0.1.0",
-        private: true,
-        workspaces: ["plugins/*", "apps/*"],
-        scripts: {
-          "dev": "bun --cwd apps/playground dev"
+      const pluginId = (projectName as string).toLowerCase().replace(/[^a-z0-9]/g, "-");
+      const pluginPackageName = `@flarecms/plugin-${pluginId}`;
+      const pluginNameHuman = (projectName as string)
+        .split(/[-_]/)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+      const playgroundName = `${pluginId}-playground`;
+
+      // Placeholders to replace across ALL files (text-level substitution)
+      const placeholders: Record<string, string> = {
+        "{{PLUGIN_ID}}": pluginId,
+        "{{PLUGIN_NAME}}": pluginPackageName,
+        "{{PLUGIN_PACKAGE_NAME}}": pluginPackageName,
+        "{{PLUGIN_NAME_HUMAN}}": pluginNameHuman,
+        "{{PLAYGROUND_NAME}}": playgroundName,
+      };
+
+      // Universal file patcher — works on any text file
+      const TEXT_EXTENSIONS = new Set([
+        ".ts", ".tsx", ".js", ".jsx", ".json",
+        ".html", ".css", ".md", ".txt", ".toml",
+        ".jsonc", ".env", ".env.example"
+      ]);
+
+      const patchFile = (filePath: string) => {
+        const ext = filePath.slice(filePath.lastIndexOf(".")).toLowerCase();
+        if (!TEXT_EXTENSIONS.has(ext)) return;
+
+        let content = readFileSync(filePath, "utf-8");
+        for (const [key, value] of Object.entries(placeholders)) {
+          content = content.replaceAll(key, value);
+        }
+
+        // Extra JSON-level fixes for package.json files
+        if (ext === ".json" && filePath.endsWith("package.json")) {
+          try {
+            const pkg = JSON.parse(content);
+            // Fix flarecms workspace:* → latest
+            for (const field of ["dependencies", "devDependencies", "peerDependencies"]) {
+              if (pkg[field]?.["flarecms"] === "workspace:*") {
+                pkg[field]["flarecms"] = "latest";
+              }
+            }
+            content = JSON.stringify(pkg, null, 2) + "\n";
+          } catch {
+            // not valid JSON, write raw
+          }
+        }
+
+        writeFileSync(filePath, content);
+      };
+
+      // Recursively patch every file under a directory
+      const patchDir = (dir: string) => {
+        for (const entry of readdirSync(dir, { withFileTypes: true })) {
+          const full = resolve(dir, entry.name);
+          if (entry.isDirectory()) {
+            if (entry.name !== "node_modules" && entry.name !== ".git") {
+              patchDir(full);
+            }
+          } else {
+            patchFile(full);
+          }
         }
       };
-      
-      // Ensure directory structure
-      mkdirSync(resolve(projectDir, "plugins"), { recursive: true });
-      mkdirSync(resolve(projectDir, "apps"), { recursive: true });
 
-      // Copy sub-templates correctly
-      cpSync(resolve(localTemplatesRoot, "plugin-development", "starter-plugin"), resolve(projectDir, "plugins", "starter-plugin"), { recursive: true });
-      cpSync(resolve(localTemplatesRoot, "plugin-development", "starter-playground"), resolve(projectDir, "apps", "playground"), { recursive: true });
-      
-      writeFileSync(pkgPath, JSON.stringify(rootPkg, null, 2));
+      // ── Copy / Download templates ──────────────────────────────────────────
+      // Mirror the template exactly: playground/ and starter-plugin/ at root
+      const localPluginSrc = resolve(localTemplatesRoot, "plugin-development", "starter-plugin");
+      const localPlaygroundSrc = resolve(localTemplatesRoot, "plugin-development", "playground");
+
+      const destPlugin = resolve(projectDir, "starter-plugin");
+      const destPlayground = resolve(projectDir, "playground");
+
+      if (existsSync(localPluginSrc) && existsSync(localPlaygroundSrc)) {
+        // Development / monorepo flow
+        mkdirSync(projectDir, { recursive: true });
+        cpSync(localPluginSrc, destPlugin, { recursive: true });
+        cpSync(localPlaygroundSrc, destPlayground, { recursive: true });
+      } else {
+        // Production flow: pull from GitHub via giget
+        mkdirSync(projectDir, { recursive: true });
+        try {
+          await downloadTemplate(
+            "github:fhorray/flarecms/templates/plugin-development/starter-plugin",
+            { dir: destPlugin, force: true }
+          );
+          await downloadTemplate(
+            "github:fhorray/flarecms/templates/plugin-development/playground",
+            { dir: destPlayground, force: true }
+          );
+        } catch (err) {
+          throw new Error(
+            `Failed to download plugin templates: ${err instanceof Error ? err.message : String(err)}`
+          );
+        }
+      }
+
+      // ── Write root workspace package.json ─────────────────────────────────
+      const rootPkg = {
+        name: projectName as string,
+        version: "0.1.0",
+        private: true,
+        workspaces: ["starter-plugin", "playground"],
+        scripts: {
+          "dev": "bun --cwd playground dev",
+          "build": "bun --cwd playground build",
+        }
+      };
+      writeFileSync(resolve(projectDir, "package.json"), JSON.stringify(rootPkg, null, 2) + "\n");
+
+      // ── Patch ALL files recursively ────────────────────────────────────────
+      patchDir(projectDir);
+
     } else {
       const template = TEMPLATES[templateKey as keyof typeof TEMPLATES];
       const localTemplatePath = resolve(localTemplatesRoot, template.dir.split('/').pop() || '');
@@ -280,9 +373,9 @@ export async function createPluginCommand() {
     cpSync(resolve(templateBase, "starter-plugin"), paths.targetPlugin, { recursive: true });
 
     // 2. Copy Playground Template
-    cpSync(resolve(templateBase, "starter-playground"), paths.targetPlayground, { recursive: true });
+    cpSync(resolve(templateBase, "playground"), paths.targetPlayground, { recursive: true });
 
-    // 3. Replace placeholders
+    // 3. Replace placeholders (Universal Patching Engine)
     const placeholders = {
       "{{PLUGIN_NAME}}": pluginPackageName,
       "{{PLUGIN_ID}}": pluginId,
@@ -291,28 +384,49 @@ export async function createPluginCommand() {
       "{{PLAYGROUND_NAME}}": playgroundName,
     };
 
-    const processFiles = (dir: string) => {
-      const entries = readdirSync(dir, { withFileTypes: true });
-      for (const entry of entries) {
-        const fullPath = resolve(dir, entry.name);
-        if (entry.isDirectory()) {
-          processFiles(fullPath);
-        } else {
-          let content = readFileSync(fullPath, "utf8");
-          let changed = false;
-          for (const [placeholder, value] of Object.entries(placeholders)) {
-            if (content.includes(placeholder)) {
-              content = content.replaceAll(placeholder, value);
-              changed = true;
+    const TEXT_EXTENSIONS = new Set([
+      ".ts", ".tsx", ".js", ".jsx", ".json",
+      ".html", ".css", ".md", ".txt", ".toml",
+      ".jsonc", ".env", ".env.example"
+    ]);
+
+    const patchFile = (filePath: string) => {
+      const ext = filePath.slice(filePath.lastIndexOf(".")).toLowerCase();
+      if (!TEXT_EXTENSIONS.has(ext)) return;
+      
+      let content = readFileSync(filePath, "utf-8");
+      for (const [key, value] of Object.entries(placeholders)) {
+        content = content.replaceAll(key, value);
+      }
+
+      // Extra JSON-level fixes for package.json files
+      if (ext === ".json" && filePath.endsWith("package.json")) {
+        try {
+          const pkg = JSON.parse(content);
+          for (const field of ["dependencies", "devDependencies", "peerDependencies"]) {
+            if (pkg[field]?.["flarecms"] === "workspace:*") {
+              pkg[field]["flarecms"] = "latest";
             }
           }
-          if (changed) writeFileSync(fullPath, content);
+          content = JSON.stringify(pkg, null, 2) + "\n";
+        } catch { }
+      }
+      writeFileSync(filePath, content);
+    };
+
+    const patchDir = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const full = resolve(dir, entry.name);
+        if (entry.isDirectory()) {
+          if (entry.name !== "node_modules" && entry.name !== ".git") patchDir(full);
+        } else {
+          patchFile(full);
         }
       }
     };
 
-    processFiles(paths.targetPlugin);
-    processFiles(paths.targetPlayground);
+    patchDir(paths.targetPlugin);
+    patchDir(paths.targetPlayground);
 
     s.stop("Plugin created!");
 
