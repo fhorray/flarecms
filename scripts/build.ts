@@ -72,7 +72,7 @@ async function runBuild() {
   // Generate Type Declarations
   console.log("📝 Generating type declarations...");
   try {
-    execSync("bun x tsc --declaration --emitDeclarationOnly --outDir dist", { 
+    execSync("bun x tsc --declaration --emitDeclarationOnly --outDir dist --noEmit false", { 
       cwd: packageDir, 
       stdio: "inherit" 
     });
