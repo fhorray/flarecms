@@ -91,6 +91,17 @@ describe('CLI: createProjectCommand (Plugin Template)', () => {
     expect(pluginSrc).not.toContain('{{');
     expect(pluginSrc).toContain("name: 'Test Plugin Workspace'");
 
+    // Verify Playground source code (MODULAR PATTERN CHECK)
+    const playgroundSrc = readFileSync(resolve(testDir, 'playground/src/index.ts'), 'utf-8');
+    expect(playgroundSrc).not.toContain('{{');
+    expect(playgroundSrc).toContain("import { createFlareAPI } from 'flarecms/server'");
+    expect(playgroundSrc).toContain("app.route('/api', createFlareAPI({");
+
+    // Verify Playground client (FRONTEND ALIGNMENT CHECK)
+    const playgroundClient = readFileSync(resolve(testDir, 'playground/src/client.tsx'), 'utf-8');
+    expect(playgroundClient).toContain('<FlareAdminRouter basePath="/admin" apiBaseUrl="/api" />');
+    expect(playgroundClient).toContain("import 'flarecms/style.css'");
+
     // Restore process.exit
     process.exit = originalExit;
   }, 15000);
