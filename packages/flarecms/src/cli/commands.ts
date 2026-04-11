@@ -19,16 +19,17 @@ const TEMPLATES = {
     description: "Unified single-process FlareCMS starter for Cloudflare Workers",
     dir: "templates/starter",
   },
+    nextjs: {
+    name: "Next.js",
+    description: "A pre-configured Next.js template",
+    dir: "templates/nextjs-starter",
+  },
   "plugin-development": {
     name: "Plugin Development",
     description: "A pre-configured plugin template",
     dir: "templates/plugin-development",
   },
-  nextjs: {
-    name: "Next.js",
-    description: "A pre-configured Next.js template",
-    dir: "templates/nextjs-starter",
-  },
+
   // blog: {
   //   name: "Blog (Coming Soon)",
   //   description: "A pre-configured blog template",
@@ -103,24 +104,7 @@ export async function createProjectCommand() {
   s.start("Creating project...");
 
   try {
-    if (templateKey === 'nextjs') {
-      s.stop("Starting Next.js setup...");
-
-      // 1. Run create-next-app
-      const nextVersion = "15.1.0"; // Stable default, can be customized
-      p.log.info(`${pc.cyan("Running:")} bun create next-app@${nextVersion} ${projectName} --typescript --tailwind --eslint --app --src-dir false --import-alias "@/*" --use-bun`);
-
-      try {
-        await execAsync(`bun create next-app@${nextVersion} ${projectName} --typescript --tailwind --eslint --app --src-dir false --import-alias "@/*" --use-bun --yes`, {
-          env: { ...process.env, NEXT_TELEMETRY_DISABLED: "1" }
-        });
-      } catch (err) {
-        // Fallback or handle error
-        p.log.warn("create-next-app failed or was already present. Continuing with injection...");
-      }
-
-      s.start("Injecting FlareCMS configuration...");
-    }
+    // Step 3: Template Setup
 
     const currentFilePath = fileURLToPath(import.meta.url);
     const cliDir = resolve(currentFilePath, "..");
@@ -250,7 +234,7 @@ export async function createProjectCommand() {
           mkdirSync(projectDir, { recursive: true });
         }
         cpSync(localTemplatePath, projectDir, { recursive: true });
-      } else if (templateKey !== 'nextjs') {
+      } else {
         // Production flow: download from GitHub
         const remoteSource = `github:fhorray/flarecms/${template.dir}`;
         await downloadTemplate(remoteSource, {
