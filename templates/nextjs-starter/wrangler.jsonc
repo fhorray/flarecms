@@ -58,13 +58,13 @@
 		{
 			"binding": "DB",
 			"database_name": "nextjs-db",
-			"database_id": "e801b1da-d5d2-4f77-8749-edc01d3d03e5"
+			"database_id": "replace-me"
 		}
 	],
 	"kv_namespaces": [
 		{
 			"binding": "KV",
-			"id": "57017eac8587499b9db3e090e6e782cf"
+			"id": "replace-me"
 		}
 	]
 }

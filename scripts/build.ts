@@ -46,6 +46,7 @@ async function runBuild() {
     external,
     define: {
       "__VERSION__": JSON.stringify(pkg.version),
+       "process.env.NODE_ENV": '"production"',
     },
   });
 

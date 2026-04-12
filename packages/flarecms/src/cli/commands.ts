@@ -108,7 +108,8 @@ export async function createProjectCommand() {
 
     const currentFilePath = fileURLToPath(import.meta.url);
     const cliDir = resolve(currentFilePath, "..");
-    const localTemplatesRoot = resolve(cliDir, "..", "..", "..", "..", "templates");
+    const repoRoot = resolve(cliDir, "..", "..", "..", "..");
+    const localTemplatesRoot = resolve(repoRoot, "templates");
 
     if (templateKey === 'plugin-development') {
       const pluginId = (projectName as string).toLowerCase().replace(/[^a-z0-9]/g, "-");
@@ -229,13 +230,17 @@ export async function createProjectCommand() {
       const template = TEMPLATES[templateKey as keyof typeof TEMPLATES];
       const localTemplatePath = resolve(localTemplatesRoot, template.dir.split('/').pop() || '');
 
-      if (existsSync(localTemplatePath)) {
+      // favor giget by default as requested by the user to ensure latest/complete files
+      const useLocal = existsSync(localTemplatePath) && process.env.FLARE_LOCAL === 'true';
+
+      if (useLocal) {
         if (!existsSync(projectDir)) {
           mkdirSync(projectDir, { recursive: true });
         }
         cpSync(localTemplatePath, projectDir, { recursive: true });
       } else {
-        // Production flow: download from GitHub
+        // Production flow: download from GitHub via giget
+        // User explicitly requested to use giget to pull files from GitHub
         const remoteSource = `github:fhorray/flarecms/${template.dir}`;
         await downloadTemplate(remoteSource, {
           dir: projectDir,
@@ -243,6 +248,7 @@ export async function createProjectCommand() {
         });
       }
     }
+
 
     // 1. Update package.json (skip if it's the root workspace package we just created)
     if (templateKey !== 'plugin-development') {
