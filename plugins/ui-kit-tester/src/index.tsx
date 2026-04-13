@@ -204,6 +204,9 @@ export default definePlugin({
             <Card title="React Extension Test" description="This block is a 'real' React component rendered via the block registry.">
               <Custom component="tester-component" props={{ initialCount: 42, label: 'Dynamic Counter' }} />
             </Card>
+            <Card title="Slider Component Demo" description="Slider block interacting with generic layouts.">
+              <Slider id="overview-slider" min={0} max={100} step={5} value={75} />
+            </Card>
             <Card title="Plugin Context" description="Data exposed by the PluginContext at runtime.">
               <Text>Plugin ID: {ctx.plugin.id}</Text>
               <Text>Plugin Version: {ctx.plugin.version}</Text>

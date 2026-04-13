@@ -34,6 +34,49 @@ export function renderToBlocks(node: any): Block[] {
       block.buttons = renderToBlocks(block.buttons);
     }
 
+    if (block.type === 'table' && block.rows) {
+      block.rows = block.rows.map((row: any) => {
+        const newRow: any = {};
+        for (const [key, val] of Object.entries(row)) {
+          if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
+            const blocks = renderToBlocks(val);
+            newRow[key] = blocks.length === 1 ? blocks[0] : blocks;
+          } else {
+            newRow[key] = val;
+          }
+        }
+        return newRow;
+      });
+    }
+
+    if ((block.type === 'accordion' || block.type === 'tabs') && block.items) {
+      block.items = block.items.map((item: any) => ({
+        ...item,
+        blocks: renderToBlocks(item.blocks || item.children) // handle both blocks and children prop just in case
+      }));
+    }
+
+    if (block.type === 'carousel' && block.items) {
+      block.items = block.items.map((slide: any) => renderToBlocks(slide));
+    }
+
+    if (block.type === 'item') {
+      if (block.media) {
+        const mediaBlocks = renderToBlocks(block.media);
+        block.media = mediaBlocks[0];
+      }
+      if (block.actions) {
+        block.actions = renderToBlocks(block.actions);
+      }
+    }
+
+    if ((block.type === 'dialog' || block.type === 'sheet') && block.trigger) {
+      if (typeof block.trigger !== 'string') {
+        const triggers = renderToBlocks(block.trigger);
+        block.trigger = triggers[0] || block.trigger;
+      }
+    }
+
     // 'page' is a virtual block to group things at the root level, but some might use it anywhere. We unwrap it.
     if (block.type === 'page') {
       return block.blocks || [];

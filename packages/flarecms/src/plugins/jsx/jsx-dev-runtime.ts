@@ -9,6 +9,9 @@ export namespace JSX {
 }
 
 export function jsx(type: any, props: any, key?: any): any {
+  if (typeof type === 'function') {
+    return type({ ...props, key });
+  }
   return {
     type,
     props,
@@ -17,7 +20,16 @@ export function jsx(type: any, props: any, key?: any): any {
 }
 
 export const jsxs = jsx;
-export const jsxDEV = jsx;
+export const jsxDEV = (type: any, props: any, key?: any, isStaticChildren?: boolean, source?: any, self?: any): any => {
+  if (typeof type === 'function') {
+    return type({ ...props, key });
+  }
+  return {
+    type,
+    props,
+    key
+  };
+};
 
 export function Fragment(props: any): any {
   return props.children;

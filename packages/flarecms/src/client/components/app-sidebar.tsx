@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   LayoutDashboardIcon,
   DatabaseIcon,
@@ -52,7 +53,7 @@ interface AppSidebarProps {
 
 interface MenuItem {
   label: string;
-  icon: React.ElementType | (() => React.ReactNode);
+  icon: React.ElementType | string;
   routeName: RouteName;
   params?: Record<string, string | number | boolean | undefined>;
   active?: boolean;
@@ -70,83 +71,87 @@ export function AppSidebar({ variant = 'sidebar' }: AppSidebarProps) {
   const { data: collections } = useStore($collections);
   const { data: plugins } = useStore($plugins);
 
-  const menuGroups: MenuGroup[] = [
-    {
-      label: 'Content',
-      items: (collections || []).map((col) => ({
-        label: col.label,
-        icon:
-          col.slug === 'pages'
-            ? FileTextIcon
-            : () => <Icon name={col.icon as IconName} />,
-        routeName: 'document_list',
-        params: { slug: col.slug },
-      })),
-    },
-    {
-      label: 'Manage',
-      items: [
-        {
-          label: 'Collections',
-          icon: DatabaseIcon,
-          routeName: 'collections',
-          active: page?.route === 'collections',
-        },
-      ],
-    },
-    {
-      label: 'Admin',
-      items: [
-        {
-          label: 'Users',
-          icon: UsersIcon,
-          routeName: 'users',
-          active: page?.route === 'users',
-        },
-        {
-          label: 'Settings',
-          icon: SettingsIcon,
-          routeName: 'settings',
-          active: page?.route === 'settings',
-        },
-        {
-          label: 'Plugins',
-          icon: PuzzleIcon,
-          routeName: 'plugins',
-          active: page?.route === 'plugins',
-        },
-      ],
-    },
-  ];
-
-  // Dynamically add Plugin groups if they have admin pages
-  (plugins || []).forEach((plugin) => {
-    if (plugin.adminPages && plugin.adminPages.length > 0) {
-      menuGroups.push({
-        label: plugin.name || plugin.id,
-        items: plugin.adminPages.map((adminPage) => ({
-          label: adminPage.label || adminPage.path,
-          icon: adminPage.icon
-            ? () => <Icon name={adminPage.icon as IconName} />
-            : PuzzleIcon,
-          routeName: adminPage.path === '/' ? 'plugin_page' : 'plugin_subpage',
-          params: {
-            pluginId: plugin.id,
-            page:
-              adminPage.path === '/'
-                ? undefined
-                : adminPage.path.replace(/^\//, ''),
-          },
+  const menuGroups = React.useMemo<MenuGroup[]>(() => {
+    const groups: MenuGroup[] = [
+      {
+        label: 'Content',
+        items: (collections || []).map((col) => ({
+          label: col.label,
+          icon: col.slug === 'pages' ? FileTextIcon : (col.icon as string),
+          routeName: 'document_list',
+          params: { slug: col.slug },
           active:
-            page?.route?.startsWith('plugin_') &&
-            page.params.pluginId === plugin.id &&
-            (adminPage.path === '/'
-              ? !page.params.page
-              : page.params.page === adminPage.path.replace(/^\//, '')),
+            page?.route === 'document_list' && page.params?.slug === col.slug,
         })),
-      });
-    }
-  });
+      },
+      {
+        label: 'Manage',
+        items: [
+          {
+            label: 'Collections',
+            icon: DatabaseIcon,
+            routeName: 'collections',
+            active: page?.route === 'collections',
+          },
+        ],
+      },
+      {
+        label: 'Admin',
+        items: [
+          {
+            label: 'Users',
+            icon: UsersIcon,
+            routeName: 'users',
+            active: page?.route === 'users',
+          },
+          {
+            label: 'Settings',
+            icon: SettingsIcon,
+            routeName: 'settings',
+            active: page?.route === 'settings',
+          },
+          {
+            label: 'Plugins',
+            icon: PuzzleIcon,
+            routeName: 'plugins',
+            active: page?.route === 'plugins',
+          },
+        ],
+      },
+    ];
+
+    // Dynamically add Plugin groups if they have admin pages
+    (plugins || []).forEach((plugin) => {
+      if (plugin.adminPages && plugin.adminPages.length > 0) {
+        groups.push({
+          label: plugin.name || plugin.id,
+          items: plugin.adminPages.map((adminPage) => {
+            const adminPath = adminPage.path.replace(/^\//, '');
+            const isActive =
+              page?.route?.startsWith('plugin_') &&
+              page.params.pluginId === plugin.id &&
+              (adminPage.path === '/'
+                ? !page.params.page
+                : page.params.page === adminPath);
+
+            return {
+              label: adminPage.label || adminPage.path,
+              icon: adminPage.icon || PuzzleIcon,
+              routeName:
+                adminPage.path === '/' ? 'plugin_page' : 'plugin_subpage',
+              params: {
+                pluginId: plugin.id,
+                page: adminPage.path === '/' ? undefined : adminPath,
+              },
+              active: isActive,
+            };
+          }),
+        });
+      }
+    });
+
+    return groups;
+  }, [collections, plugins, page?.route, page?.params]);
 
   return (
     <Sidebar collapsible="icon" variant={variant}>
@@ -214,13 +219,15 @@ export function AppSidebar({ variant = 'sidebar' }: AppSidebarProps) {
                     {group.items.map((item) => (
                       <SidebarMenuItem key={item.label}>
                         <SidebarMenuButton
-                          isActive={
-                            item.active || page?.route === item.routeName
-                          }
+                          isActive={item.active}
                           onClick={() => navigate(item.routeName, item.params)}
                           tooltip={item.label}
                         >
-                          <item.icon />
+                          {typeof item.icon === 'string' ? (
+                            <Icon name={item.icon as IconName} />
+                          ) : (
+                            <item.icon />
+                          )}
                           <span>{item.label}</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
