@@ -36,6 +36,7 @@ export interface FlarePluginDefinition {
   version?: string;
   /**
    * Plugin format.
+   * standard: it will be loaded as a standard plugin.
    */
   format?: 'standard';
   /**
@@ -52,33 +53,39 @@ export interface FlarePluginDefinition {
    */
   storage?: Record<string, { indexes?: string[] }>;
   /**
-   * Admin pages for the plugin.
-   * The key is the path and the value is an object with the page configuration.
+   * Pages for the plugin.
    */
-  adminPages?: Array<{ path: string; label: string; icon?: string }>;
+  pages?: Array<{
+    path: string;
+    label: string;
+    icon?: string;
+    render?: (ctx: PluginContext) => Promise<BlockResponse>;
+  }>;
+
   /**
    * Admin widgets for the plugin.
-   * The key is the id and the value is an object with the widget configuration.
    */
   adminWidgets?: Array<{ id: string; title?: string; size?: 'full' | 'half' | 'third' }>;
 
   /**
    * Hooks for the plugin.
-   * The key is the hook name and the value is the hook handler.
    */
   hooks?: Record<string, FlareHookEntry>;
+
   /**
    * Routes for the plugin.
-   * The key is the route name and the value is the route handler.
    */
   routes?: Record<string, FlareRouteEntry>;
+
   /**
-   * Admin handler for the plugin.
-   * The key is the admin handler and the value is the admin handler.
+   * UI Actions for the plugin (buttons, form submissions).
    */
-  admin?: {
-    handler: (interaction: BlockInteraction, ctx: PluginContext) => Promise<BlockResponse>;
-  };
+  actions?: Record<string, FlareActionHandler>;
+
+  /**
+   * Modular features that group related pages, actions, and hooks.
+   */
+  features?: FlareFeature[];
 }
 
 /**
@@ -89,6 +96,36 @@ export type FlarePlugin = FlarePluginDefinition & {
   version: string;
 };
 
+/**
+ * A feature groups related pages, actions, and hooks into a single logic unit.
+ */
+export interface FlareFeature {
+  id: string; // Unique ID for this feature within the plugin
+  label?: string; // Optional display label for the feature grouping
+  icon?: string; // Optional icon for the feature grouping
+  /**
+   * Optional page contributed by this feature.
+   */
+  page?: {
+    path: string;
+    label?: string;
+    icon?: string;
+    render: (ctx: PluginContext) => Promise<BlockResponse>;
+  };
+  /**
+   * Optional actions contributed by this feature.
+   */
+  actions?: Record<string, FlareActionHandler>;
+  /**
+   * Optional hooks contributed by this feature.
+   */
+  hooks?: Record<string, FlareHookEntry>;
+  /**
+   * Optional routes contributed by this feature.
+   */
+  routes?: Record<string, FlareRouteEntry>;
+}
+
 // ── Block Kit Types ──
 
 /**
@@ -96,7 +133,8 @@ export type FlarePlugin = FlarePluginDefinition & {
  */
 export type BlockType =
   | 'header' | 'text' | 'divider' | 'stat' | 'input' | 'textarea' | 'select' | 'toggle'
-  | 'button' | 'button_group' | 'table' | 'alert' | 'card' | 'grid' | 'form' | 'custom';
+  | 'button' | 'button_group' | 'table' | 'alert' | 'card' | 'grid' | 'form' | 'custom'
+  | 'empty_state';
 
 /**
  * Block interface for the plugin.
@@ -104,7 +142,8 @@ export type BlockType =
 export interface Block {
   type: BlockType;
   id?: string;
-  className?: string;
+  variant?: string;
+  size?: string;
   [key: string]: unknown;
 }
 
@@ -112,20 +151,37 @@ export interface Block {
  * Block interaction types for the plugin.
  */
 export type BlockInteraction =
-  | { type: 'page_load'; page: string }
-  | { type: 'block_action'; blockId: string; value?: unknown }
-  | { type: 'form_submit'; formId: string; values: Record<string, unknown> };
+  | { type: 'page_load'; page: string; actionParams?: string[]; value?: unknown }
+  | { type: 'block_action'; blockId: string; value?: unknown; actionParams?: string[] }
+  | { type: 'form_submit'; formId: string; values: Record<string, unknown>; actionParams?: string[]; value?: unknown };
 
 /**
  * Block response for the plugin.
  */
 export interface BlockResponse {
-  blocks: Block[];
+  blocks?: Block[];
   toast?: {
     type: 'success' | 'error' | 'info' | 'warning';
     message: string;
   };
+  dialog?: {
+    type: 'dialog' | 'alert_dialog' | 'sheet';
+    title?: string;
+    description?: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm?: string;
+    blocks?: Block[];
+    variant?: string;
+    size?: string;
+  };
+  redirect?: string;
 }
+
+/**
+ * Action handler for UI Interactions
+ */
+export type FlareActionHandler = (interaction: BlockInteraction, ctx: PluginContext) => Promise<BlockResponse>;
 
 /**
  * Flare hook handler for the plugin.
@@ -146,17 +202,18 @@ export type FlareHookEntry =
 /**
  * Flare route entry for the plugin.
  */
-export interface FlareRouteEntry {
-  handler: (routeCtx: RouteCtx, ctx: PluginContext) => Promise<unknown>;
-  input?: unknown; // Can be a Zod schema or generic type
+export interface FlareRouteEntry<TInput = unknown> {
+  handler: (routeCtx: RouteCtx<TInput>, ctx: PluginContext) => Promise<unknown>;
+  input?: any; // Zod schema or similar object with .safeParse
+  method?: string;
   public?: boolean;
 }
 
 /**
  * Context provided to route handlers.
  */
-export interface RouteCtx {
-  input: unknown;
+export interface RouteCtx<TInput = unknown> {
+  input: TInput;
   request: SerializedRequest;
   requestMeta: RequestMeta;
 }
@@ -249,10 +306,6 @@ export interface PluginDescriptor {
    */
   storage?: Record<string, { indexes?: string[] }>;
   /**
-   * Admin pages for the plugin.
-   */
-  adminPages?: Array<{ path: string; label: string; icon?: string }>;
-  /**
    * Admin widgets for the plugin.
    */
   adminWidgets?: Array<{ id: string; title?: string; size?: 'full' | 'half' | 'third' }>;
@@ -295,9 +348,13 @@ export interface PluginManifest {
    */
   routes: string[];
   /**
-   * Admin pages for the plugin.
+   * Pages for the plugin.
    */
-  adminPages: Array<{ path: string; label: string; icon?: string }>;
+  pages: Array<{ path: string; label: string; icon?: string }>;
+  /**
+   * UI actions for the plugin.
+   */
+  actions?: string[];
   /**
    * Admin widgets for the plugin.
    */
@@ -341,15 +398,13 @@ export interface ResolvedPlugin {
    */
   routes: Record<string, ResolvedRoute>;
   /**
-   * Admin handler for the plugin.
+   * Pages for the plugin (resolved).
    */
-  admin?: {
-    handler: (interaction: BlockInteraction, ctx: PluginContext) => Promise<BlockResponse>;
-  };
+  pages: Array<{ path: string; label: string; icon?: string; render?: (ctx: PluginContext) => Promise<BlockResponse> }>;
   /**
-   * Admin pages for the plugin.
+   * Actions for the plugin (resolved).
    */
-  adminPages: Array<{ path: string; label: string; icon?: string }>;
+  actions: Record<string, FlareActionHandler>;
   /**
    * Admin widgets for the plugin.
    */

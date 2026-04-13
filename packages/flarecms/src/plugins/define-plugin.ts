@@ -20,9 +20,9 @@ import type { FlarePluginDefinition } from './types';
  * ```
  */
 export function definePlugin<T extends FlarePluginDefinition>(definition: T): T {
-	if (!definition.hooks && !definition.routes && !definition.admin) {
+	if (!definition.hooks && !definition.routes && !definition.pages && !definition.actions) {
 		throw new Error(
-			'Invalid plugin definition: A plugin must provide at least `hooks`, `routes`, or an `admin` handler.',
+			'Invalid plugin definition: A plugin must provide at least `hooks`, `routes`, `pages`, or `actions`.',
 		);
 	}
 

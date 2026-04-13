@@ -6,7 +6,7 @@ export interface PluginManifest {
   version: string;
   capabilities: string[];
   routes: string[];
-  adminPages?: Array<{ path: string; label?: string; icon?: string }>;
+  pages?: Array<{ path: string; label?: string; icon?: string }>;
   adminWidgets?: Array<{ id: string; title?: string; size?: string }>;
 }
 

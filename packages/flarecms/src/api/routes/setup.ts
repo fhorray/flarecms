@@ -96,15 +96,15 @@ setupRoutes.post('/', async (c) => {
       { name: 'flare:setup_completed_at', value: new Date().toISOString() },
     ];
 
-    for (const setting of settings) {
-      await db
-        .insertInto('options')
-        .values(setting)
-        .onConflict((oc) =>
-          oc.column('name').doUpdateSet({ value: setting.value }),
-        )
-        .execute();
-    }
+    await db
+      .insertInto('options')
+      .values(settings)
+      .onConflict((oc: any) =>
+        oc.column('name').doUpdateSet({
+          value: (eb: any) => eb.ref('excluded.value'),
+        }),
+      )
+      .execute();
 
     // 4. Auto-login the new admin
     const sessionId = generateSessionToken();

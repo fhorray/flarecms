@@ -66,7 +66,9 @@ export class PluginManager {
 	async invokeAdmin(pluginId: string, interaction: BlockInteraction): Promise<BlockResponse> {
 		const plugin = this.plugins.find((p) => p.id === pluginId);
 		if (!plugin) throw new Error(`Plugin "${pluginId}" not found.`);
-		if (!plugin.admin) throw new Error(`Plugin "${pluginId}" does not support admin interactions.`);
+
+		const hasPagesOrActions = (plugin.pages && plugin.pages.length > 0) || (plugin.actions && Object.keys(plugin.actions).length > 0);
+		if (!hasPagesOrActions) throw new Error(`Plugin "${pluginId}" does not support admin interactions.`);
 
 		const ctx = createPluginContext({
 			pluginId: plugin.id,
@@ -79,7 +81,38 @@ export class PluginManager {
 			encryptionSecret: this.encryptionSecret,
 		});
 
-		return plugin.admin.handler(interaction, ctx);
+		// 1. New Declarative Routing (Pages)
+		if (interaction.type === 'page_load' && plugin.pages) {
+			const page = plugin.pages.find(p => p.path === interaction.page);
+			if (page && page.render) {
+				return page.render(ctx);
+			}
+		}
+
+		// 2. New Declarative Actions
+		if ((interaction.type === 'block_action' || interaction.type === 'form_submit') && plugin.actions) {
+			const actionId = interaction.type === 'block_action' ? interaction.blockId : interaction.formId;
+			// check exact match first, then prefix match for intent like "intent-delete:123"
+			let handler = plugin.actions[actionId];
+			let actionParams: string[] = [];
+
+			if (!handler) {
+				for (const [key, fn] of Object.entries(plugin.actions)) {
+					if (actionId.startsWith(`${key}:`)) {
+						handler = fn;
+						actionParams = actionId.slice(key.length + 1).split(':');
+						break;
+					}
+				}
+			}
+
+			if (handler) {
+				const extendedInteraction = { ...interaction, actionParams } as any;
+				return handler(extendedInteraction, ctx);
+			}
+		}
+
+		return { blocks: [] };
 	}
 
 	/**

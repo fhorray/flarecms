@@ -37,6 +37,7 @@ interface BlockRendererProps {
  * Renders a list of blocks.
  */
 export function BlockRenderer({ blocks, onAction }: BlockRendererProps) {
+  if (!blocks) return null;
   return (
     <>
       {blocks.map((block, index) => (
@@ -53,14 +54,13 @@ function RenderSingleBlock({
   block: Block;
   onAction: (i: BlockInteraction) => void;
 }) {
-  const className = block.className || '';
-
   switch (block.type) {
     case 'header':
       const HeaderTag = (
-        ['xl', 'lg'].includes(block.size || '') ? 'h2' : 'h3'
-      ) as any;
+        ['xl', 'lg', '2xl'].includes(block.size || '') ? 'h2' : 'h3'
+      );
       const sizeClass = {
+        '2xl': 'text-4xl font-extrabold tracking-tight',
         xl: 'text-3xl font-bold tracking-tight',
         lg: 'text-2xl font-semibold tracking-tight',
         md: 'text-xl font-medium tracking-tight',
@@ -68,7 +68,7 @@ function RenderSingleBlock({
         xs: 'text-base font-medium',
       }[block.size || 'md'];
       return (
-        <HeaderTag className={cn(sizeClass, className)}>{block.text}</HeaderTag>
+        <HeaderTag className={sizeClass}>{block.text}</HeaderTag>
       );
 
     case 'text':
@@ -77,23 +77,25 @@ function RenderSingleBlock({
         success: 'text-green-600',
         warning: 'text-amber-600',
         error: 'text-red-600',
+        destructive: 'text-destructive',
         primary: 'text-primary',
-      }[block.variant || 'muted'];
+        default: 'text-foreground',
+      }[block.variant || 'default'];
       return (
-        <p className={cn('text-sm leading-relaxed', variantClass, className)}>
+        <p className={cn('text-sm leading-relaxed', variantClass)}>
           {block.text}
         </p>
       );
 
     case 'divider':
-      return <Separator className={cn('my-4', className)} />;
+      return <Separator className="my-4" />;
 
     case 'stat':
       return (
         <div
           className={cn(
             'p-4 rounded-lg border bg-card shadow-sm flex flex-col gap-1',
-            className,
+            block.variant === 'outline' ? 'bg-transparent border-dashed' : ''
           )}
         >
           <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
@@ -129,13 +131,16 @@ function RenderSingleBlock({
 
     case 'input':
       return (
-        <div className={cn('space-y-1.5', className)}>
+        <div className="space-y-1.5">
           {block.label && <Label htmlFor={block.id}>{block.label}</Label>}
           <Input
             id={block.id}
             type={block.inputType || 'text'}
             placeholder={block.placeholder}
             defaultValue={block.value}
+            className={cn(
+              block.size === 'sm' ? 'h-7' : block.size === 'lg' ? 'h-10' : ''
+            )}
             onChange={(e) =>
               onAction({
                 type: 'block_action',
@@ -149,13 +154,16 @@ function RenderSingleBlock({
 
     case 'textarea':
       return (
-        <div className={cn('space-y-1.5', className)}>
+        <div className="space-y-1.5">
           {block.label && <Label htmlFor={block.id}>{block.label}</Label>}
           <Textarea
             id={block.id}
             placeholder={block.placeholder}
             defaultValue={block.value}
             rows={block.rows || 3}
+            className={cn(
+              block.size === 'sm' ? 'text-xs' : block.size === 'lg' ? 'text-base' : ''
+            )}
             onChange={(e) =>
               onAction({
                 type: 'block_action',
@@ -169,7 +177,7 @@ function RenderSingleBlock({
 
     case 'select':
       return (
-        <div className={cn('space-y-1.5', className)}>
+        <div className="space-y-1.5">
           {block.label && <Label>{block.label}</Label>}
           <Select
             defaultValue={block.value}
@@ -177,11 +185,16 @@ function RenderSingleBlock({
               onAction({ type: 'block_action', blockId: block.id, value: val })
             }
           >
-            <SelectTrigger id={block.id}>
+            <SelectTrigger
+              id={block.id}
+              className={cn(
+                block.size === 'sm' ? 'h-7' : block.size === 'lg' ? 'h-10' : ''
+              )}
+            >
               <SelectValue placeholder="Select an option" />
             </SelectTrigger>
             <SelectContent>
-              {block.options.map((opt) => (
+              {block.options.map((opt: any) => (
                 <SelectItem key={opt.value} value={opt.value}>
                   {opt.label}
                 </SelectItem>
@@ -193,10 +206,13 @@ function RenderSingleBlock({
 
     case 'toggle':
       return (
-        <div className={cn('flex items-center gap-3 py-2', className)}>
+        <div className="flex items-center gap-3 py-2">
           <Switch
             id={block.id}
             defaultChecked={block.value}
+            className={cn(
+              block.size === 'sm' ? 'scale-75' : block.size === 'lg' ? 'scale-110' : ''
+            )}
             onCheckedChange={(val) =>
               onAction({ type: 'block_action', blockId: block.id, value: val })
             }
@@ -211,7 +227,6 @@ function RenderSingleBlock({
           id={block.id}
           variant={block.variant || 'default'}
           size={block.size || 'default'}
-          className={className}
           onClick={() => onAction({ type: 'block_action', blockId: block.id })}
         >
           {block.label}
@@ -227,8 +242,7 @@ function RenderSingleBlock({
               ? 'justify-center'
               : block.align === 'right'
                 ? 'justify-end'
-                : 'justify-start',
-            className,
+                : 'justify-start'
           )}
         >
           {block.buttons.map((btn, idx) => (
@@ -243,20 +257,21 @@ function RenderSingleBlock({
         success: CheckCircle2,
         warning: AlertTriangle,
         destructive: AlertCircle,
-      }[block.status];
+        error: AlertCircle,
+      }[block.status || 'info'] || Info;
       const statusClasses = {
         info: 'bg-blue-50 text-blue-800 border-blue-200',
         success: 'bg-green-50 text-green-800 border-green-200',
         warning: 'bg-amber-50 text-amber-800 border-amber-200',
         destructive: 'bg-red-50 text-red-800 border-red-200',
-      }[block.status];
+        error: 'bg-red-50 text-red-800 border-red-200',
+      }[block.status || 'info'] || 'bg-blue-50 text-blue-800 border-blue-200';
 
       return (
         <div
           className={cn(
             'p-4 rounded-lg border flex gap-3',
-            statusClasses,
-            className,
+            statusClasses
           )}
         >
           <IconComp className="size-5 shrink-0" />
@@ -274,7 +289,7 @@ function RenderSingleBlock({
     case 'grid':
       return (
         <div
-          className={cn('grid gap-4', className)}
+          className="grid gap-4"
           style={{
             gridTemplateColumns: `repeat(${block.columns || 1}, minmax(0, 1fr))`,
             gap: block.gap ? `${block.gap}px` : undefined,

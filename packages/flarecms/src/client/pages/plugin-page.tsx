@@ -8,6 +8,24 @@ import type {
 import { sendPluginInteraction } from '../lib/api';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '../components/ui/dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from '../components/ui/sheet';
+import { Button } from '../components/ui/button';
+import { cn } from '../lib/utils';
 
 interface PluginPageProps {
   pluginId: string;
@@ -18,6 +36,7 @@ export function PluginPage({ pluginId, page }: PluginPageProps) {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [overlay, setOverlay] = useState<BlockResponse['dialog'] | null>(null);
 
   const handleInteraction = useCallback(
     async (interaction: BlockInteraction) => {
@@ -31,14 +50,28 @@ export function PluginPage({ pluginId, page }: PluginPageProps) {
           setBlocks(response.blocks);
         }
 
+        if (response.dialog) {
+          setOverlay(response.dialog);
+        } else if (response.blocks || response.redirect) {
+          // If we got new blocks or a redirect, close any open overlay
+          setOverlay(null);
+        }
+
         if (response.toast) {
           const type = response.toast.type || 'info';
           const toaster = toast as unknown as Record<
             string,
-            (msg: string) => void
+            (msg: string, opts?: any) => void
           >;
           if (typeof toaster[type] === 'function') {
             toaster[type](response.toast.message);
+          }
+        }
+
+        if (response.redirect) {
+          // Simplistic redirect for now - if it starts with /, assume relative to admin base
+          if (response.redirect.startsWith('/')) {
+             window.location.href = response.redirect;
           }
         }
 
@@ -102,6 +135,79 @@ export function PluginPage({ pluginId, page }: PluginPageProps) {
   return (
     <div className="p-8 space-y-8">
       <BlockRenderer blocks={blocks} onAction={handleInteraction} />
+
+      {/* Dialog / Alert Dialog Overlay */}
+      <Dialog open={!!overlay && overlay.type !== 'sheet'} onOpenChange={(open) => !open && setOverlay(null)}>
+        <DialogContent 
+          size={overlay?.size as any}
+          showCloseButton={overlay?.type !== 'alert_dialog'}
+        >
+          <DialogHeader>
+            <DialogTitle>{overlay?.title}</DialogTitle>
+            {overlay?.description && (
+              <DialogDescription>{overlay.description}</DialogDescription>
+            )}
+          </DialogHeader>
+          
+          {overlay?.blocks && (
+            <div className="py-4">
+              <BlockRenderer blocks={overlay.blocks} onAction={handleInteraction} />
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOverlay(null)}>
+              {overlay?.cancelText || 'Cancel'}
+            </Button>
+            {overlay?.onConfirm && (
+              <Button 
+                onClick={() => {
+                  handleInteraction({ type: 'block_action', blockId: overlay.onConfirm! });
+                }}
+              >
+                {overlay?.confirmText || 'Confirm'}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Sheet Overlay */}
+      <Sheet open={overlay?.type === 'sheet'} onOpenChange={(open) => !open && setOverlay(null)}>
+        <SheetContent 
+          side={(overlay as any)?.side || "right"} 
+          size={(overlay as any)?.size || "default"}
+        >
+          <SheetHeader>
+            <SheetTitle>{overlay?.title}</SheetTitle>
+            {overlay?.description && (
+              <SheetDescription>{overlay.description}</SheetDescription>
+            )}
+          </SheetHeader>
+
+          <div className="flex-1 overflow-y-auto py-6">
+            {overlay?.blocks && (
+              <BlockRenderer blocks={overlay.blocks} onAction={handleInteraction} />
+            )}
+          </div>
+
+          <SheetFooter className="border-t pt-4">
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setOverlay(null)}>
+              {overlay?.cancelText || 'Close'}
+            </Button>
+            {overlay?.onConfirm && (
+              <Button 
+                className="w-full sm:w-auto"
+                onClick={() => {
+                  handleInteraction({ type: 'block_action', blockId: overlay.onConfirm! });
+                }}
+              >
+                {overlay?.confirmText || 'Save Changes'}
+              </Button>
+            )}
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

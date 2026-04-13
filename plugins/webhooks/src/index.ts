@@ -1,15 +1,9 @@
-import { definePlugin } from 'flarecms/plugins';
-import type {
-  BlockInteraction,
-  BlockResponse,
-  PluginContext
-} from 'flarecms/plugins';
+import { definePlugin, ui, action } from 'flarecms/plugins';
+import type { BlockResponse, PluginContext } from 'flarecms/plugins';
+import { z } from 'zod';
 
 /**
  * Webhooks & Automations Plugin
- * 
- * Allows users to configure outbound HTTP webhooks triggered by 
- * content lifecycle events (create, update, delete).
  */
 
 interface WebhookEndpoint {
@@ -29,295 +23,207 @@ interface DeliveryLog {
   event: string;
 }
 
+const webhookFormSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1),
+  url: z.string().url(),
+  event: z.enum(['all', 'save', 'delete']).default('all'),
+  active: z.boolean().default(true)
+});
+
 export default definePlugin({
   id: 'webhooks',
   name: 'Webhooks & Aut.',
   version: '1.0.0',
 
-  capabilities: [
-    'network:fetch',
-    'network:fetch:any',
-    'read:content'
-  ],
+  capabilities: ['network:fetch', 'network:fetch:any', 'read:content'],
 
   storage: {
-    // Stores endpoint configurations
-    endpoints: {
-      indexes: ['active']
-    },
-    // Stores delivery history
-    logs: {
-      indexes: ['timestamp', 'status']
-    }
+    endpoints: { indexes: ['active'] },
+    logs: { indexes: ['timestamp', 'status'] }
   },
 
-  adminPages: [
-    { path: '/', label: 'Overview', icon: 'link' },
-    { path: '/logs', label: 'Delivery Logs', icon: 'history' }
-  ],
-
-  adminWidgets: [
-    { id: 'webhook-stats', title: 'Webhook Health', size: 'half' }
-  ],
-
+  adminWidgets: [{ id: 'webhook-stats', title: 'Webhook Health', size: 'half' }],
 
   hooks: {
-    /**
-     * Triggered every time a document is saved (created or updated).
-     */
-    'content:afterSave': async (event, ctx) => {
-      await triggerWebhooks('save', event, ctx);
-    },
-
-    /**
-     * Triggered before a document is deleted.
-     */
-    'content:afterDelete': async (event, ctx) => {
-      await triggerWebhooks('delete', event, ctx);
-    }
+    'content:afterSave': async (event, ctx) => { await triggerWebhooks('save', event, ctx); },
+    'content:afterDelete': async (event, ctx) => { await triggerWebhooks('delete', event, ctx); }
   },
 
-  admin: {
-    handler: async (interaction: BlockInteraction, ctx: PluginContext): Promise<BlockResponse> => {
-      const { type } = interaction;
-
-      // ─── Dashboard Widget ──────────────────────────────────────────────────
-      if (type === 'page_load' && interaction.page === '__widget__/webhook-stats') {
+  pages: [
+    {
+      path: '/',
+      label: 'Overview',
+      icon: 'link',
+      render: async (ctx) => await renderWebhookList(ctx)
+    },
+    {
+      path: '/logs',
+      label: 'Delivery Logs',
+      icon: 'history',
+      render: async (ctx) => {
         const logsStore = ctx.storage['logs'];
-        if (!logsStore) return { blocks: [{ type: 'text', text: 'Logs storage unreachable' }] };
+        if (!logsStore) return ui.page([ui.text('Logs unreachable')]);
+
+        const logs = (await logsStore.query({ limit: 50 })) as { items: DeliveryLog[] };
+
+        return ui.page([
+          ui.header('Delivery History', { size: 'lg' }),
+          ui.text('Audit trail of recent webhook executions and their responses.'),
+          ui.divider(),
+          ui.table(
+            ['Time', 'Event', 'URL', 'Status'],
+            logs.items.map((l) => [
+              l.timestamp, l.event, l.url,
+              l.status >= 200 && l.status < 300 ? `${l.status} OK` : `${l.status} Failed`
+            ])
+          )
+        ]);
+      }
+    },
+    {
+      path: '__widget__/webhook-stats',
+      label: 'Widget',
+      render: async (ctx) => {
+        const logsStore = ctx.storage['logs'];
+        if (!logsStore) return ui.page([ui.text('Logs unreachable')]);
 
         const logs = await logsStore.query({ limit: 50 }) as { items: DeliveryLog[] };
         const successCount = logs.items.filter((l) => l.status >= 200 && l.status < 300).length;
         const total = logs.items.length;
         const rate = total > 0 ? Math.round((successCount / total) * 100) : 100;
 
-        return {
-          blocks: [
-            {
-              type: 'grid',
-              columns: 2,
-              blocks: [
-                { type: 'stat', label: 'Success Rate (Last 50)', value: `${rate}%` },
-                { type: 'stat', label: 'Total Deliveries', value: total }
-              ]
-            }
-          ]
-        };
+        return ui.page([
+          ui.grid(2, [
+            ui.stat('Success Rate (Last 50)', `${rate}%`),
+            ui.stat('Total Deliveries', total)
+          ])
+        ]);
       }
+    }
+  ],
 
-      // ─── Overview Page: List Webhooks ──────────────────────────────────────
-      if (type === 'page_load' && interaction.page === '/') {
-        return await renderWebhookList(ctx);
-      }
+  actions: {
+    'new-webhook': async (interaction, ctx) => {
+      return ui.page([
+        ui.header('Create Webhook', { size: 'md' }),
+        ui.form('webhook-form', { submitLabel: 'Save Webhook' }, [
+          ui.input('name', 'Display Name', { placeholder: 'e.g. Production Webhook', required: true }),
+          ui.input('url', 'Endpoint URL', { placeholder: 'https://api.myapp.com/webhook', required: true }),
+          ui.select('event', 'Trigger Event', [
+            { label: 'All Content Events', value: 'all' },
+            { label: 'On Save/Create Only', value: 'save' },
+            { label: 'On Delete Only', value: 'delete' }
+          ], { defaultValue: 'all' }),
+          ui.toggle('active', 'Enable immediately', { defaultValue: true })
+        ])
+      ]);
+    },
 
-      // ─── Logs Page ─────────────────────────────────────────────────────────
-      if (type === 'page_load' && interaction.page === '/logs') {
-        const logsStore = ctx.storage['logs'];
-        if (!logsStore) return { blocks: [{ type: 'text', text: 'Logs unreachable' }] };
+    'edit': async (interaction, ctx) => {
+      const id = interaction.actionParams?.[0] || '';
+      const ep = (await ctx.storage['endpoints']?.get(id)) as WebhookEndpoint | undefined;
 
-        const logs = (await logsStore.query({ limit: 50 })) as { items: DeliveryLog[] };
+      if (!ep) return ui.response({ toast: ui.toast('error', 'Webhook not found') });
 
-        return {
-          blocks: [
-            { type: 'header', text: 'Delivery History', size: 'lg' },
-            { type: 'text', text: 'Audit trail of recent webhook executions and their responses.' },
-            { type: 'divider' },
-            {
-              type: 'table',
-              columns: [
-                { key: 'timestamp', label: 'Time' },
-                { key: 'event', label: 'Event' },
-                { key: 'url', label: 'URL' },
-                { key: 'status', label: 'Status' }
-              ],
-              rows: logs.items.map((l) => ({
-                ...l,
-                status: l.status >= 200 && l.status < 300
-                  ? `${l.status} OK`
-                  : `${l.status} Failed`
-              }))
-            }
-          ]
-        };
-      }
+      return ui.page([
+        ui.header('Edit Webhook', { size: 'md' }),
+        ui.form('webhook-form', { submitLabel: 'Update Webhook' }, [
+          ui.input('id', 'Internal ID', { defaultValue: ep.id, required: true }),
+          ui.input('name', 'Display Name', { defaultValue: ep.name, required: true }),
+          ui.input('url', 'Endpoint URL', { defaultValue: ep.url, required: true }),
+          ui.select('event', 'Trigger Event', [
+            { label: 'All Content Events', value: 'all' },
+            { label: 'On Save/Create Only', value: 'save' },
+            { label: 'On Delete Only', value: 'delete' }
+          ], { defaultValue: ep.event || 'all' }),
+          ui.toggle('active', 'Webhook Active', { defaultValue: ep.active ?? true })
+        ])
+      ]);
+    },
 
-      // ─── Handle Webhook Creation Form ──────────────────────────────────────
-      if (type === 'block_action' && interaction.blockId === 'new-webhook') {
-        return {
-          blocks: [
-            { type: 'header', text: 'Create Webhook', size: 'md' },
-            {
-              type: 'form',
-              id: 'webhook-form',
-              submitLabel: 'Save Webhook',
-              blocks: [
-                { type: 'input', id: 'name', label: 'Display Name', placeholder: 'e.g. Production Webhook', required: true },
-                { type: 'input', id: 'url', label: 'Endpoint URL', placeholder: 'https://api.myapp.com/webhook', required: true },
-                {
-                  type: 'select',
-                  id: 'event',
-                  label: 'Trigger Event',
-                  options: [
-                    { label: 'All Content Events', value: 'all' },
-                    { label: 'On Save/Create Only', value: 'save' },
-                    { label: 'On Delete Only', value: 'delete' }
-                  ],
-                  defaultValue: 'all'
-                },
-                { type: 'toggle', id: 'active', label: 'Enable immediately', defaultValue: true }
-              ]
-            }
-          ]
-        };
-      }
-
-      // ─── Action: EDIT ──────────────────────────────────────────────────────
-      if (type === 'block_action' && interaction.blockId.startsWith('edit:')) {
-        const id = interaction.blockId.split(':')[1] || '';
-        const ep = (await ctx.storage['endpoints']?.get(id)) as WebhookEndpoint | undefined;
-
-        if (!ep) return { toast: { type: 'error', message: 'Webhook not found' }, blocks: [] };
-
-        return {
-          blocks: [
-            { type: 'header', text: 'Edit Webhook', size: 'md' },
-            {
-              type: 'form',
-              id: 'webhook-form',
-              submitLabel: 'Update Webhook',
-              blocks: [
-                { type: 'input', id: 'id', label: 'Internal ID', placeholder: 'id', defaultValue: ep.id, required: true },
-                { type: 'input', id: 'name', label: 'Display Name', placeholder: 'e.g. Production Webhook', defaultValue: ep.name, required: true },
-                { type: 'input', id: 'url', label: 'Endpoint URL', placeholder: 'https://api.myapp.com/webhook', defaultValue: ep.url, required: true },
-                {
-                  type: 'select',
-                  id: 'event',
-                  label: 'Trigger Event',
-                  options: [
-                    { label: 'All Content Events', value: 'all' },
-                    { label: 'On Save/Create Only', value: 'save' },
-                    { label: 'On Delete Only', value: 'delete' }
-                  ],
-                  defaultValue: ep.event || 'all'
-                },
-                { type: 'toggle', id: 'active', label: 'Webhook Active', defaultValue: ep.active ?? true }
-              ]
-            }
-          ]
-        };
-      }
-
-      // ─── Form Submission: SAVE / UPDATE ────────────────────────────────────
-      if (type === 'form_submit' && interaction.formId === 'webhook-form') {
-        const { id: existingId, name, url, event, active } = interaction.values as any;
-        const id = existingId || `wh_${Date.now().toString(36)}`;
+    'webhook-form': action.define()
+      .input(webhookFormSchema)
+      .handler(async ({ input }, ctx) => {
+        const id = input.id || `wh_${Date.now().toString(36)}`;
 
         const endpointsStore = ctx.storage['endpoints'];
         if (endpointsStore) {
-          await endpointsStore.put(id, { id, name, url, event, active });
+          await endpointsStore.put(id, { id, ...input });
         }
 
-        const listResponse = await renderWebhookList(ctx);
-        return {
-          ...listResponse,
-          toast: { type: 'success', message: `Webhook ${existingId ? 'updated' : 'created'} successfully!` },
-        };
+        return ui.redirect('/', {
+          toast: ui.toast('success', `Webhook ${input.id ? 'updated' : 'created'} successfully!`)
+        });
+      }),
+
+    'delete': async (interaction, ctx) => {
+      const id = interaction.actionParams?.[0] || '';
+      return ui.response({
+        dialog: ui.alertDialog('Delete Webhook', {
+          description: 'Are you sure you want to delete this webhook?',
+          confirmText: 'Delete',
+          onConfirm: `confirm-delete:${id}`
+        })
+      });
+    },
+
+    'confirm-delete': async (interaction, ctx) => {
+      const id = interaction.actionParams?.[0] || '';
+      await ctx.storage['endpoints']?.delete(id);
+      return ui.redirect('/', { toast: ui.toast('info', 'Webhook deleted.') });
+    },
+
+    'test': async (interaction, ctx) => {
+      const id = interaction.actionParams?.[0] || '';
+      const ep = (await ctx.storage['endpoints']?.get(id)) as WebhookEndpoint | undefined;
+
+      if (ep) {
+        const result = await sendWebhook(ep.url, { type: 'test', timestamp: new Date().toISOString() }, ctx);
+        await ctx.storage['logs']?.put(Date.now().toString(), {
+          timestamp: new Date().toISOString(),
+          webhookId: id,
+          url: ep.url,
+          event: 'test',
+          status: result.status
+        });
+
+        return ui.redirect('/', {
+          toast: ui.toast(result.ok ? 'success' : 'error', `Test ${result.ok ? 'sent successfully' : 'failed'} (Status: ${result.status})`)
+        });
       }
-
-      // ─── Action: DELETE ────────────────────────────────────────────────────
-      if (type === 'block_action' && interaction.blockId.startsWith('delete:')) {
-        const id = interaction.blockId.split(':')[1] || '';
-        await ctx.storage['endpoints']?.delete(id);
-        
-        const listResponse = await renderWebhookList(ctx);
-        return {
-          ...listResponse,
-          toast: { type: 'info', message: 'Webhook deleted.' },
-        };
-      }
-
-      // ─── Action: TEST ──────────────────────────────────────────────────────
-      if (type === 'block_action' && interaction.blockId.startsWith('test:')) {
-        const id = interaction.blockId.split(':')[1] || '';
-        const ep = (await ctx.storage['endpoints']?.get(id)) as WebhookEndpoint | undefined;
-
-        if (ep) {
-          const result = await sendWebhook(ep.url, { type: 'test', timestamp: new Date().toISOString() }, ctx);
-          await ctx.storage['logs']?.put(Date.now().toString(), {
-            timestamp: new Date().toISOString(),
-            webhookId: id,
-            url: ep.url,
-            event: 'test',
-            status: result.status
-          });
-
-          const listResponse = await renderWebhookList(ctx);
-          return {
-            ...listResponse,
-            toast: {
-              type: result.ok ? 'success' : 'error',
-              message: `Test ${result.ok ? 'sent successfully' : 'failed'} (Status: ${result.status})`
-            },
-          };
-        }
-      }
-
-      return { blocks: [{ type: 'text', text: 'Unknown interaction' }] };
+      return ui.response({ toast: ui.toast('error', 'Webhook not found.') });
     }
   }
 });
 
-/**
- * Helper to render the primary webhook list
- */
 async function renderWebhookList(ctx: PluginContext): Promise<BlockResponse> {
   const endpointsStore = ctx.storage['endpoints'];
-  if (!endpointsStore) return { blocks: [{ type: 'text', text: 'Storage unreachable' }] };
+  if (!endpointsStore) return ui.page([ui.text('Storage unreachable')]);
 
   const endpoints = (await endpointsStore.query()) as { items: WebhookEndpoint[] };
 
-  const rows = endpoints.items.map((ep) => ({
-    name: ep.name,
-    url: ep.url,
-    event: ep.event === 'all' ? 'All Events' : ep.event,
-    status: ep.active ? 'Active' : 'Inactive',
-    actions: {
-      type: 'button_group',
-      buttons: [
-        { type: 'button', id: `edit:${ep.id}`, label: 'Edit', variant: 'outline', size: 'sm' },
-        { type: 'button', id: `test:${ep.id}`, label: 'Test', variant: 'secondary', size: 'sm' },
-        { type: 'button', id: `delete:${ep.id}`, label: 'Delete', variant: 'destructive', size: 'sm' }
-      ]
-    }
-  }));
+  const rows = endpoints.items.map((ep) => [
+    ep.name,
+    ep.url,
+    ep.event === 'all' ? 'All Events' : ep.event,
+    ep.active ? 'Active' : 'Inactive',
+    ui.buttonGroup([
+      ui.button(`edit:${ep.id}`, 'Edit', { variant: 'outline', size: 'sm' }),
+      ui.button(`test:${ep.id}`, 'Test', { variant: 'secondary', size: 'sm' }),
+      ui.button(`delete:${ep.id}`, 'Delete', { variant: 'destructive', size: 'sm' })
+    ])
+  ]);
 
-  return {
-    blocks: [
-      { type: 'header', text: 'Configured Webhooks', size: 'lg' },
-      { type: 'text', text: 'Manage outbound endpoints that receive real-time content updates.' },
-      {
-        type: 'button_group',
-        buttons: [{ type: 'button', id: 'new-webhook', label: 'Create New Webhook', variant: 'default' }]
-      },
-      { type: 'divider' },
-      rows.length > 0 ? {
-        type: 'table',
-        columns: [
-          { key: 'name', label: 'Name' },
-          { key: 'url', label: 'Endpoint URL' },
-          { key: 'event', label: 'Trigger' },
-          { key: 'status', label: 'Status' },
-          { key: 'actions', label: 'Actions' }
-        ],
-        rows
-      } : {
-        type: 'alert',
-        status: 'info',
-        title: 'No Webhooks Configured',
-        message: 'Click the button above to add your first automation.'
-      }
-    ]
-  };
+  return ui.page([
+    ui.header('Configured Webhooks', { size: 'lg' }),
+    ui.text('Manage outbound endpoints that receive real-time content updates.'),
+    ui.buttonGroup([ui.button('new-webhook', 'Create New Webhook', { variant: 'default' })]),
+    ui.divider(),
+    rows.length > 0
+      ? ui.table(['Name', 'Endpoint URL', 'Trigger', 'Status', 'Actions'], rows)
+      : ui.alert('No Webhooks Configured', 'Click the button above to add your first automation.', { status: 'info' })
+  ]);
 }
 
 /**

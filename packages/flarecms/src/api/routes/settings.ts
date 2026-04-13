@@ -24,18 +24,23 @@ settingsRoutes.patch('/', requireRole(['admin']), async (c) => {
   const db = createDb(c.env.DB);
 
   try {
-    for (const [key, value] of Object.entries(body)) {
-      const settingName = key.startsWith('flare:') ? key : `flare:${key}`;
-      await db.insertInto('options')
-        .values({
-          name: settingName,
-          value: String(value)
-        })
-        .onConflict((oc) => oc.column('name').doUpdateSet({
-          value: String(value)
-        }))
+    const settings = Object.entries(body).map(([key, value]) => ({
+      name: key.startsWith('flare:') ? key : `flare:${key}`,
+      value: String(value),
+    }));
+
+    if (settings.length > 0) {
+      await db
+        .insertInto('options')
+        .values(settings)
+        .onConflict((oc: any) =>
+          oc.column('name').doUpdateSet({
+            value: (eb: any) => eb.ref('excluded.value'),
+          }),
+        )
         .execute();
     }
+
     return apiResponse.ok(c, { success: true });
   } catch (e: any) {
     return apiResponse.error(c, e.message);

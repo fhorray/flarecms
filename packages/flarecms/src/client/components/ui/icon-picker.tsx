@@ -476,9 +476,16 @@ interface IconProps extends Omit<LucideProps, 'ref'> {
   name: IconName;
 }
 
+const normalizeIconName = (name: string) => {
+  return name
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .replace(/ Icon$/, '') // Remove "Icon" suffix if present
+    .toLowerCase() as IconName;
+};
+
 const Icon = React.forwardRef<React.ComponentRef<LucideIcon>, IconProps>(
   ({ name, ...props }, ref) => {
-    return <DynamicIcon name={name} {...props} ref={ref} />;
+    return <DynamicIcon name={normalizeIconName(name)} {...props} ref={ref} />;
   },
 );
 Icon.displayName = 'Icon';

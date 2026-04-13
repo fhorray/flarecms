@@ -1,8 +1,7 @@
 import React from 'react';
 import { useStore } from '@nanostores/react';
 import { $balance, $charges } from '../store/queries';
-import { CreditCard, ArrowUpRight, Users, Zap, Activity } from 'lucide-react';
-import * as LucideIcon from 'lucide-react';
+import { CreditCard, Zap, Activity } from 'lucide-react';
 interface StripeDashboardProps {
   config: { currency: string; testMode: boolean };
 }

@@ -40,34 +40,13 @@
     "flarecms": "./dist/cli/index.js"
   },
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./server": {
-      "types": "./dist/server/index.d.ts",
-      "default": "./dist/server/index.js"
-    },
-    "./client": {
-      "types": "./dist/client/index.d.ts",
-      "default": "./dist/client/index.js"
-    },
-    "./auth": {
-      "types": "./dist/auth/index.d.ts",
-      "default": "./dist/auth/index.js"
-    },
-    "./db": {
-      "types": "./dist/db/index.d.ts",
-      "default": "./dist/db/index.js"
-    },
-    "./cli": {
-      "types": "./dist/cli/index.d.ts",
-      "default": "./dist/cli/index.js"
-    },
-    "./plugins": {
-      "types": "./dist/plugins/index.d.ts",
-      "default": "./dist/plugins/index.js"
-    },
+    ".": "./src/index.ts",
+    "./server": "./src/server/index.ts",
+    "./client": "./src/client/index.ts",
+    "./auth": "./src/auth/index.ts",
+    "./db": "./src/db/index.ts",
+    "./cli": "./src/cli/index.ts",
+    "./plugins": "./src/plugins/index.ts",
     "./style.css": {
       "types": "./dist/style.css.d.ts",
       "default": "./dist/style.css"

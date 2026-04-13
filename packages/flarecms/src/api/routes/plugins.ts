@@ -22,7 +22,7 @@ pluginRoutes.get('/', async (c) => {
 			version: p.version,
 			capabilities: p.capabilities,
 			routes: manager.getRoutes?.(p.id) ?? [],
-			adminPages: p.adminPages ?? [],
+			pages: p.pages ?? [],
 			adminWidgets: p.adminWidgets ?? [],
 		})),
 	);

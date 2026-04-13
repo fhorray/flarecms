@@ -67,12 +67,6 @@ export default definePlugin({
   // Security permissions
   capabilities: ['read:content', 'network:fetch'],
   
-  // Admin UI Navigation
-  adminPages: [
-    { path: '/', label: 'Overview', icon: 'LayoutDashboard' },
-    { path: '/settings', label: 'Configuration', icon: 'Settings' }
-  ],
-
   // Logic
   hooks: {
     'content:afterSave': async (event, ctx) => {
@@ -80,57 +74,134 @@ export default definePlugin({
     }
   },
 
-  // Admin UI Handler (Block Kit)
-  admin: {
-    handler: async (interaction, ctx) => {
-      return {
-        blocks: [
-          { type: 'header', text: 'Plugin Overview', size: 'lg' },
-          { type: 'text', text: 'Dashboard content goes here.' }
-        ]
-      };
+  // Admin UI Pages
+  pages: [
+    { 
+      path: '/', 
+      label: 'Overview', 
+      icon: 'LayoutDashboard',
+      render: async (ctx) => {
+        return ui.page([
+          ui.header('Plugin Overview', { size: 'lg' }),
+          ui.text('Dashboard content goes here.', { variant: 'muted' })
+        ]);
+      }
     }
+  ],
+
+  // Admin UI Interactions (Buttons, Forms)
+  actions: {
+    'save-config': action.define()
+      .input(z.object({ token: z.string() }))
+      .handler(async ({ input }, ctx) => {
+        await ctx.kv.set('token', input.token);
+        return ui.response({ toast: ui.toast('success', 'Saved!') });
+      })
   }
 });
 ```
 
 ---
 
-## Administrative UI (Block Kit)
+FlareCMS uses **Block Kit**, a declarative UI system. FlareCMS exports a fluent `ui` builder to make creating interfaces and interactions extremely ergonomic and fully type-safe.
 
-FlareCMS uses **Block Kit**, a declarative UI system. Your plugin backend returns a list of blocks, and the CMS renders them safely.
+> [!IMPORTANT]
+> **No raw `className` injection**: To ensure design system consistency, responsive stability, and security, plugins cannot inject arbitrary CSS classes. Instead, use the provided `variant` and `size` properties.
 
-### Interaction Logic
-When a user visits your plugin page or clicks a button, the `admin.handler` is invoked with a `BlockInteraction`.
+### Routing (Pages)
+Use the `pages` array to define your plugin's navigation and render logic.
 
 ```typescript
-admin: {
-  handler: async (interaction, ctx) => {
-    // 1. Detect if it's an initial page load
-    if (interaction.type === 'page_load') {
-      if (interaction.page === '/settings') {
-        return renderSettingsPage();
-      }
-    }
+import { ui } from 'flarecms/plugins';
 
-    // 2. Detect a button click
-    if (interaction.type === 'block_action' && interaction.blockId === 'save-btn') {
-      await ctx.kv.set('config', interaction.value);
-      return {
-        toast: { type: 'success', message: 'Settings saved!' },
-        blocks: [...]
-      };
+pages: [
+  {
+    path: '/settings',
+    label: 'Configuration',
+    render: async (ctx) => {
+      return ui.page([
+        ui.header('Settings'),
+        ui.form('save-config', { submitLabel: 'Save' }, [
+          ui.input('token', 'API Token', { required: true })
+        ])
+      ]);
     }
+  }
+]
+```
+
+### Handling Interactions (Actions)
+When a user clicks a button or submits a form, FlareCMS routes the event to your `actions` dictionary. You can handle basic clicks or use the `action` builder to inject automatic Zod validation for forms.
+
+```typescript
+import { action, ui } from 'flarecms/plugins';
+import { z } from 'zod';
+
+actions: {
+  // 1. Zod Validated Form Submission
+  'save-config': action.define()
+    .input(z.object({ token: z.string().min(10) }))
+    .handler(async ({ input }, ctx) => {
+      // `input.token` is strictly typed and validated!
+      await ctx.kv.set('token', input.token);
+      return ui.redirect('/', { toast: ui.toast('success', 'Token saved.') });
+    }),
+
+  // 2. Simple Button Click with Contextual Parameters
+  'delete-item': async (interaction, ctx) => {
+    // Buttons with ID "delete-item:123" map here automatically
+    const itemId = interaction.actionParams?.[0]; 
+    
+    return ui.response({
+      dialog: ui.alertDialog('Delete Item', {
+        description: 'Are you sure?',
+        confirmText: 'Delete',
+        onConfirm: `confirm-delete:${itemId}`
+      })
+    });
   }
 }
 ```
 
-### Supported Blocks
-- `header`, `text`, `divider`, `stat`
-- `input`, `textarea`, `select`, `toggle`
-- `button`, `button_group`
-- `table`, `alert`, `card`, `grid`, `form`
-- `custom` (Direct React injection)
+### Supported UI Blocks
+
+The `ui` builder supports a variety of native CMS components, all standardized via variants and sizes.
+
+#### Layout & Typography
+| Component | Key Properties |
+|-----------|----------------|
+| `ui.header(text, opts)` | `size`: `xs`, `sm`, `md`, `lg`, `xl`, `2xl` |
+| `ui.text(text, opts)` | `variant`: `default`, `muted`, `success`, `warning`, `error`, `primary`, `destructive` |
+| `ui.divider()` | — |
+| `ui.stat(label, value, opts)` | `variant`: `default`, `outline` |
+
+#### Form Controls
+| Component | Key Properties |
+|-----------|----------------|
+| `ui.input(id, label, opts)` | `size`: `default`, `sm`, `lg` |
+| `ui.textarea(id, label, opts)` | `size`: `default`, `sm`, `lg` |
+| `ui.select(id, label, options, opts)` | `size`: `default`, `sm`, `lg` |
+| `ui.toggle(id, label, opts)` | `size`: `default`, `sm`, `lg` |
+
+#### Actions
+| Component | Key Properties |
+|-----------|----------------|
+| `ui.button(id, label, opts)` | `variant`: `default`, `destructive`, `outline`, `secondary`, `ghost`, `link` <br> `size`: `default`, `sm`, `lg`, `icon`, `icon-sm` |
+| `ui.buttonGroup(buttons, opts)` | `variant`: `default`, `outline` |
+
+#### Overlays
+| Component | Key Properties |
+|-----------|----------------|
+| `ui.dialog(title, blocks, opts)` | `size`: `sm`, `md`, `lg`, `xl`, `full` <br> `variant`: `default`, `destructive` |
+| `ui.sheet(title, blocks, opts)` | `size`: `sm`, `md`, `lg`, `xl`, `full`, `wide` <br> `side`: `left`, `right`, `top`, `bottom` |
+| `ui.alertDialog(title, opts)` | `variant`: `destructive`, `default` |
+
+#### Specialized
+- `ui.table(columns, rows, opts)`: Supports `variant` (`default`, `striped`, `bordered`) and `size` (`sm`, `default`).
+- `ui.card(blocks, opts)`: Supports `variant` (`default`, `outline`, `secondary`, `ghost`, `accent`).
+- `ui.grid(columns, blocks, opts)`: Precise layout control via `columns` and `gap`.
+- `ui.custom(component, props)`: Direct React component injection.
+- `ui.emptyState(title, description, opts)`: Helper for empty screens.
 
 ---
 
@@ -176,7 +247,32 @@ registerPluginBlock('my-map', MyInteractiveMap);
 ```
 
 #### The `onAction` Callback
-The component receives `onAction` as a prop. Calling it triggers a request to your plugin's `admin.handler`, allowing real-time sync between your custom React UI and your plugin's edge logic.
+The component receives `onAction` as a prop. Calling it triggers a request to your plugin's `actions`, allowing real-time sync between your custom React UI and your plugin's edge logic.
+
+---
+
+## Custom API Routes
+
+Plugins can expose their own HTTP endpoints. Use the `route` builder to define methods and automatically parse/validate incoming requests using Zod.
+
+```typescript
+import { route } from 'flarecms/plugins';
+import { z } from 'zod';
+
+routes: {
+  'create-charge': route.post()
+    .input(z.object({ amount: z.number(), currency: z.string() }))
+    .handler(async ({ input, request }, ctx) => {
+      // `input` is strictly typed. Invalid requests are automatically rejected with 400 Bad Request.
+      const res = await processCharge(input.amount, input.currency);
+      return { success: true, chargeId: res.id };
+    }),
+    
+  'get-status': route.get().handler(async (_, ctx) => {
+    return { status: 'online' };
+  })
+}
+```
 
 ---
 
@@ -261,4 +357,4 @@ const rawKey = await ctx.crypto.decrypt(config.encryptedKey);
 1. **Keep it Pure**: Plugin handlers should be stateless where possible. Use `ctx.kv` for persistence.
 2. **Handle Errors gracefully**: Use `ctx.log.error` instead of throwing to avoid crashing the request cycle.
 3. **Waterfall Rules**: In `beforeSave` hooks, **always** return the modified event object.
-4. **HMR Support**: FlareCMS supports Hot Module Replacement for plugins during development. Any change to your `admin.handler` will refresh the Admin UI automatically.
+4. **HMR Support**: FlareCMS supports Hot Module Replacement for plugins during development. Any change to your `pages` or `actions` will refresh the Admin UI automatically.

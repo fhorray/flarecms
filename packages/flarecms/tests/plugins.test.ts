@@ -50,14 +50,14 @@ describe('FlareCMS Plugin System', () => {
             handler: async (e) => e
           }
         },
-        adminPages: [{ path: '/', label: 'Home' }]
+        pages: [{ path: '/', label: 'Home' }]
       });
 
       expect(entry.id).toBe('test-plugin');
       expect(entry.version).toBe('1.0.0');
       expect(entry.capabilities).toEqual(['read:content']);
       expect(entry.hooks['content:beforeSave']?.priority).toBe(10);
-      expect(entry.adminPages.length).toBe(1);
+      expect(entry.pages.length).toBe(1);
     });
   });
 
@@ -310,7 +310,7 @@ describe('Hooks (hooks.ts)', () => {
     }] as any, {} as any, { name: 't', url: 't', locale: 't' });
 
     const result = await pipeline.runChain('my-hook', { base: 0 });
-    expect(result).toEqual({ base: 0, a: 1, b: 2 });
+    expect(result as any).toEqual({ base: 0, a: 1, b: 2 });
   });
 
   test('runParallel runs independently', async () => {
@@ -438,14 +438,16 @@ describe('Manager (manager.ts)', () => {
       id: 'admin-plugin', storage: {}, capabilities: [], allowedHosts: [], version: '1.0.0',
       hooks: {},
       routes: {},
-      admin: {
-        handler: async (interaction: any, ctx: any) => {
-          if (interaction.type === 'page_load') {
-            return { blocks: [{ type: 'text', text: 'hello admin' }] };
+      pages: [
+        {
+          path: '/',
+          label: 'Overview',
+          render: async (ctx) => {
+             return { blocks: [{ type: 'text', text: 'hello admin' }] };
           }
-          return { blocks: [] };
         }
-      }
+      ],
+      actions: {}
     }] as any, {} as any, { name: 't', url: 't', locale: 't' });
 
     const response = await manager.invokeAdmin('admin-plugin', { type: 'page_load', page: '/' } as any);

@@ -3,6 +3,7 @@ import App from './app';
 import { setBase, setApiBaseUrl } from './store/config';
 import { initRouter } from './store/router';
 import { TooltipProvider } from './components/ui/tooltip';
+import { Toaster } from './components/ui/sonner';
 
 export interface FlareAdminProps {
   /**
@@ -41,6 +42,7 @@ export function FlareAdminRouter({
     <div className="flare-admin">
       <TooltipProvider>
         <App />
+        <Toaster />
       </TooltipProvider>
     </div>
   );

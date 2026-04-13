@@ -7,6 +7,7 @@ import type {
 	FlareRouteEntry,
 	ResolvedRoute,
 	FlarePlugin,
+	FlareActionHandler,
 } from './types';
 
 /**
@@ -55,16 +56,57 @@ export function adaptEntry(
 	const version = descriptor.version;
 
 	const hooks: Record<string, ResolvedHook> = {};
+	const routes: Record<string, ResolvedRoute> = {};
+	const pages: NonNullable<FlarePluginDefinition['pages']> = [...(definition.pages || [])];
+	const actions: Record<string, FlareActionHandler> = { ...(definition.actions || {}) };
+
+	// 1. Process standard hooks
 	if (definition.hooks) {
 		for (const [name, entry] of Object.entries(definition.hooks)) {
 			hooks[name] = resolveHook(entry, id);
 		}
 	}
 
-	const routes: Record<string, ResolvedRoute> = {};
+	// 2. Process standard routes
 	if (definition.routes) {
 		for (const [name, entry] of Object.entries(definition.routes)) {
 			routes[name] = resolveRoute(entry);
+		}
+	}
+
+	// 3. Process Features
+	if (definition.features) {
+		for (const feature of definition.features) {
+			// Feature Pages
+			if (feature.page) {
+				pages.push({
+					path: feature.page.path,
+					label: feature.page.label || feature.label || feature.id,
+					icon: feature.page.icon || feature.icon,
+					render: feature.page.render,
+				});
+			}
+
+			// Feature Actions
+			if (feature.actions) {
+				for (const [name, handler] of Object.entries(feature.actions)) {
+					actions[name] = handler;
+				}
+			}
+
+			// Feature Hooks
+			if (feature.hooks) {
+				for (const [name, entry] of Object.entries(feature.hooks)) {
+					hooks[name] = resolveHook(entry, id);
+				}
+			}
+
+			// Feature Routes
+			if (feature.routes) {
+				for (const [name, entry] of Object.entries(feature.routes)) {
+					routes[name] = resolveRoute(entry);
+				}
+			}
 		}
 	}
 
@@ -86,8 +128,8 @@ export function adaptEntry(
 		storage,
 		hooks,
 		routes,
-		admin: definition.admin,
-		adminPages: descriptor.adminPages ?? [],
+		pages,
+		actions,
 		adminWidgets: descriptor.adminWidgets ?? [],
 	};
 }

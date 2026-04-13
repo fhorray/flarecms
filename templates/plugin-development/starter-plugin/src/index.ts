@@ -1,6 +1,5 @@
-import { definePlugin } from 'flarecms/plugins';
+import { definePlugin, ui } from 'flarecms/plugins';
 import type {
-  BlockInteraction,
   BlockResponse,
   PluginContext
 } from 'flarecms/plugins';
@@ -18,12 +17,17 @@ export default definePlugin({
 
   capabilities: [
     'network:fetch',
-    'storage:read',
-    'storage:write'
+    'read:content',
+    'write:content'
   ],
 
-  adminPages: [
-    { path: '/', label: 'Dashboard', icon: 'layout-dashboard' },
+  pages: [
+    { 
+      path: '/', 
+      label: 'Dashboard', 
+      icon: 'LayoutDashboard',
+      render: async (ctx) => renderDashboard(ctx)
+    },
   ],
 
   /**
@@ -44,60 +48,43 @@ export default definePlugin({
     }
   },
 
-  admin: {
-    handler: async (interaction: BlockInteraction, ctx: PluginContext): Promise<BlockResponse> => {
-      const { type } = interaction;
+  actions: {
+    'hello-form': async (interaction, ctx) => {
+      if (interaction.type !== 'form_submit') return { blocks: [] };
+      const { name } = interaction.values as { name: string };
+      
+      return ui.response({
+        toast: ui.toast('success', `Hello ${name}! The plugin is working correctly.`),
+        blocks: [
+          ui.header(`Hello, ${name}!`, { size: 'md' }),
+          ui.text('You have successfully interacted with your new plugin.'),
+          ui.button('back', 'Go Back', { variant: 'outline' })
+        ]
+      });
+    },
 
-      // Handle the main dashboard view
-      if (type === 'page_load' && interaction.page === '/') {
-        const visits = (await ctx.kv.get('visit_count') as number) || 0;
-        await ctx.kv.set('visit_count', visits + 1);
-
-        return {
-          blocks: [
-            { type: 'header', text: 'Welcome to {{PLUGIN_NAME_HUMAN}}', size: 'lg' },
-            { type: 'text', text: 'This is a starter plugin created automatically with the creation script.' },
-            { type: 'divider' },
-            {
-              type: 'grid',
-              columns: 2,
-              blocks: [
-                { type: 'stat', label: 'Plugin Status', value: 'Active' },
-                { type: 'stat', label: 'Total Visits', value: visits }
-              ]
-            },
-            {
-              type: 'form',
-              id: 'hello-form',
-              submitLabel: 'Say Hello',
-              blocks: [
-                { type: 'input', id: 'name', label: 'Your Name', placeholder: 'Enter your name...', required: true }
-              ]
-            }
-          ]
-        };
-      }
-
-      // Handle form submission
-      if (type === 'form_submit' && interaction.formId === 'hello-form') {
-        const { name } = interaction.values as { name: string };
-        return {
-          toast: { type: 'success', message: `Hello ${name}! The plugin is working correctly.` },
-          blocks: [
-            { type: 'header', text: `Hello, ${name}!`, size: 'md' },
-            { type: 'text', text: 'You have successfully interacted with your new plugin.' },
-            { type: 'button', id: 'back', label: 'Go Back', variant: 'outline' }
-          ]
-        };
-      }
-
-      // Handle go back action
-      if (type === 'block_action' && interaction.blockId === 'back') {
-        // Return to main layout
-        return { blocks: [] }; // The shell will re-trigger page_load if redirected or we can just return empty and handle it.
-      }
-
-      return { blocks: [{ type: 'text', text: 'Plugin Starter is ready!' }] };
+    'back': async (_, ctx) => {
+      // Return to main dashboard view by returning empty blocks (which forces a refresh in the shell)
+      // or by re-rendering the dashboard.
+      return renderDashboard(ctx);
     }
   }
 });
+
+async function renderDashboard(ctx: PluginContext): Promise<BlockResponse> {
+  const visits = (await ctx.kv.get('visit_count') as number) || 0;
+  await ctx.kv.set('visit_count', visits + 1);
+
+  return ui.page([
+    ui.header('Welcome to {{PLUGIN_NAME_HUMAN}}', { size: 'lg' }),
+    ui.text('This is a starter plugin created automatically with the creation script.'),
+    ui.divider(),
+    ui.grid(2, [
+      ui.stat('Plugin Status', 'Active'),
+      ui.stat('Total Visits', visits)
+    ]),
+    ui.form('hello-form', { submitLabel: 'Say Hello' }, [
+      ui.input('name', 'Your Name', { placeholder: 'Enter your name...', required: true })
+    ])
+  ]);
+}

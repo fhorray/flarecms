@@ -42,9 +42,11 @@ import {
 import { ChevronRight } from 'lucide-react';
 
 import { $collections } from '../store/collections';
-import { $plugins } from '../store/plugins';
+import { $plugins, type PluginManifest } from '../store/plugins';
 
 import { Icon, type IconName } from './ui/icon-picker';
+import type { Collection } from '../types';
+import React, { useMemo } from 'react';
 
 interface AppSidebarProps {
   variant?: 'sidebar' | 'floating' | 'inset';
@@ -52,7 +54,7 @@ interface AppSidebarProps {
 
 interface MenuItem {
   label: string;
-  icon: React.ElementType | (() => React.ReactNode);
+  icon: React.ElementType | IconName;
   routeName: RouteName;
   params?: Record<string, string | number | boolean | undefined>;
   active?: boolean;
@@ -70,83 +72,90 @@ export function AppSidebar({ variant = 'sidebar' }: AppSidebarProps) {
   const { data: collections } = useStore($collections);
   const { data: plugins } = useStore($plugins);
 
-  const menuGroups: MenuGroup[] = [
-    {
-      label: 'Content',
-      items: (collections || []).map((col) => ({
-        label: col.label,
-        icon:
-          col.slug === 'pages'
-            ? FileTextIcon
-            : () => <Icon name={col.icon as IconName} />,
-        routeName: 'document_list',
-        params: { slug: col.slug },
-      })),
-    },
-    {
-      label: 'Manage',
-      items: [
-        {
-          label: 'Collections',
-          icon: DatabaseIcon,
-          routeName: 'collections',
-          active: page?.route === 'collections',
-        },
-      ],
-    },
-    {
-      label: 'Admin',
-      items: [
-        {
-          label: 'Users',
-          icon: UsersIcon,
-          routeName: 'users',
-          active: page?.route === 'users',
-        },
-        {
-          label: 'Settings',
-          icon: SettingsIcon,
-          routeName: 'settings',
-          active: page?.route === 'settings',
-        },
-        {
-          label: 'Plugins',
-          icon: PuzzleIcon,
-          routeName: 'plugins',
-          active: page?.route === 'plugins',
-        },
-      ],
-    },
-  ];
-
-  // Dynamically add Plugin groups if they have admin pages
-  (plugins || []).forEach((plugin) => {
-    if (plugin.adminPages && plugin.adminPages.length > 0) {
-      menuGroups.push({
-        label: plugin.name || plugin.id,
-        items: plugin.adminPages.map((adminPage) => ({
-          label: adminPage.label || adminPage.path,
-          icon: adminPage.icon
-            ? () => <Icon name={adminPage.icon as IconName} />
-            : PuzzleIcon,
-          routeName: adminPage.path === '/' ? 'plugin_page' : 'plugin_subpage',
-          params: {
-            pluginId: plugin.id,
-            page:
-              adminPage.path === '/'
-                ? undefined
-                : adminPage.path.replace(/^\//, ''),
-          },
-          active:
-            page?.route?.startsWith('plugin_') &&
-            page.params.pluginId === plugin.id &&
-            (adminPage.path === '/'
-              ? !page.params.page
-              : page.params.page === adminPage.path.replace(/^\//, '')),
+  const menuGroups = useMemo(() => {
+    const groups: MenuGroup[] = [
+      {
+        label: 'Content',
+        items: (collections || []).map((col: Collection) => ({
+          label: col.label,
+          icon:
+            col.slug === 'pages'
+              ? FileTextIcon
+              : (col.icon as IconName),
+          routeName: 'document_list',
+          params: { slug: col.slug },
+          active: page?.route === 'document_list' && page.params.slug === col.slug,
         })),
-      });
-    }
-  });
+      },
+      {
+        label: 'Manage',
+        items: [
+          {
+            label: 'Collections',
+            icon: DatabaseIcon,
+            routeName: 'collections',
+            active: page?.route === 'collections',
+          },
+        ],
+      },
+      {
+        label: 'Admin',
+        items: [
+          {
+            label: 'Users',
+            icon: UsersIcon,
+            routeName: 'users',
+            active: page?.route === 'users',
+          },
+          {
+            label: 'Settings',
+            icon: SettingsIcon,
+            routeName: 'settings',
+            active: page?.route === 'settings',
+          },
+          {
+            label: 'Plugins',
+            icon: PuzzleIcon,
+            routeName: 'plugins',
+            active: page?.route === 'plugins',
+          },
+        ],
+      },
+    ];
+
+    // Dynamically add Plugin groups if they have pages
+    (plugins || []).forEach((plugin: PluginManifest) => {
+      if (plugin.pages && plugin.pages.length > 0) {
+        // Filter out internal pages and widgets
+        const visiblePages = plugin.pages.filter(
+          (p) => !p.path.startsWith('__') && !p.path.includes('/__')
+        );
+
+        if (visiblePages.length > 0) {
+          groups.push({
+            label: plugin.name || plugin.id,
+            items: visiblePages.map((p) => ({
+              label: p.label || p.path,
+              icon: (p.icon as IconName) || PuzzleIcon,
+              routeName: p.path === '/' ? 'plugin_page' : 'plugin_subpage',
+              params: {
+                pluginId: plugin.id,
+                page: p.path === '/' ? undefined : p.path.replace(/^\//, ''),
+              },
+              active:
+                page?.route?.startsWith('plugin_') &&
+                page.params?.pluginId === plugin.id &&
+                (p.path === '/'
+                  ? !page.params?.page
+                  : page.params?.page === p.path.replace(/^\//, '')),
+            })),
+          });
+        }
+      }
+    });
+
+    return groups;
+  }, [collections, plugins, page?.route, page?.params?.pluginId, page?.params?.page]);
 
   return (
     <Sidebar collapsible="icon" variant={variant}>
@@ -215,12 +224,18 @@ export function AppSidebar({ variant = 'sidebar' }: AppSidebarProps) {
                       <SidebarMenuItem key={item.label}>
                         <SidebarMenuButton
                           isActive={
-                            item.active || page?.route === item.routeName
+                            item.active !== undefined
+                              ? item.active
+                              : page?.route === item.routeName
                           }
                           onClick={() => navigate(item.routeName, item.params)}
                           tooltip={item.label}
                         >
-                          <item.icon />
+                          {typeof item.icon === 'string' ? (
+                            <Icon name={item.icon as IconName} />
+                          ) : (
+                            <item.icon />
+                          )}
                           <span>{item.label}</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>

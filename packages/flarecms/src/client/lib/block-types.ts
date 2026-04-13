@@ -20,12 +20,14 @@ export type BlockType =
   | 'card'
   | 'grid'
   | 'form'
-  | 'custom';
+  | 'custom'
+  | 'empty_state';
 
 export interface BaseBlock {
   type: BlockType;
   id?: string;
-  className?: string;
+  variant?: string;
+  size?: string;
 }
 
 export interface HeaderBlock extends BaseBlock {
@@ -109,7 +111,7 @@ export interface AlertBlock extends BaseBlock {
   type: 'alert';
   title?: string;
   message: string;
-  status: 'info' | 'success' | 'warning' | 'destructive';
+  status: 'info' | 'success' | 'warning' | 'destructive' | 'error';
 }
 
 export interface CardBlock extends BaseBlock {
@@ -161,13 +163,26 @@ export type Block =
 
 export type BlockInteraction =
   | { type: 'page_load'; page: string }
-  | { type: 'block_action'; blockId: string; value?: any }
-  | { type: 'form_submit'; formId: string; values: Record<string, any> };
+  | { type: 'block_action'; blockId: string; value?: any; actionParams?: string[] }
+  | { type: 'form_submit'; formId: string; values: Record<string, any>; actionParams?: string[] };
 
 export interface BlockResponse {
-  blocks: Block[];
+  blocks?: Block[];
   toast?: {
     type: 'success' | 'error' | 'info' | 'warning';
     message: string;
   };
+  dialog?: {
+    type: 'dialog' | 'alert_dialog' | 'sheet';
+    title?: string;
+    description?: string;
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm?: string;
+    blocks?: Block[];
+    variant?: string;
+    size?: string;
+    side?: 'top' | 'right' | 'bottom' | 'left';
+  };
+  redirect?: string;
 }

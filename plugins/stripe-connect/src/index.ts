@@ -1,9 +1,6 @@
-import { definePlugin } from 'flarecms/plugins';
-import type {
-  BlockInteraction,
-  BlockResponse,
-  PluginContext,
-} from 'flarecms/plugins';
+import { definePlugin, ui, route, action } from 'flarecms/plugins';
+import type { BlockInteraction, BlockResponse, PluginContext } from 'flarecms/plugins';
+import { z } from 'zod';
 import type {
   StripeConfig,
   StripeBalance,
@@ -41,107 +38,81 @@ export default definePlugin({
     sync_logs: { indexes: ['timestamp'] }
   },
 
-  adminPages: [
-    { path: '/', label: 'Overview', icon: 'layout-dashboard' },
-    { path: '/subscriptions', label: 'Subscriptions', icon: 'refresh-cw' },
-    { path: '/products', label: 'Products', icon: 'package' },
-    { path: '/customers', label: 'Customers', icon: 'users' },
-    { path: '/settings', label: 'Settings', icon: 'settings' }
-  ],
-
   adminWidgets: [
     { id: 'mrr-stats', title: 'Stripe Overview', size: 'half' }
   ],
 
-  routes: {
-    'get-balance': {
-      handler: async (_, ctx) => {
+  pages: [
+    {
+      path: '/settings', label: 'Settings', icon: 'settings',
+      render: async (ctx) => {
         const config = await getStripeConfig(ctx);
-        const secretKey = await ctx.crypto?.decrypt(config.encryptedKey) || '';
-        return await stripeRequest<StripeBalance>(ctx, secretKey, 'GET', '/v1/balance');
-      }
-    },
-    'get-charges': {
-      handler: async (_, ctx) => {
-        const config = await getStripeConfig(ctx);
-        const secretKey = await ctx.crypto?.decrypt(config.encryptedKey) || '';
-        const response = await stripeRequest<StripeListResponse<StripeCharge>>(ctx, secretKey, 'GET', '/v1/charges', { limit: 10 });
-        return response.data;
-      }
-    },
-    'get-subscriptions': {
-      handler: async (_, ctx) => {
-        return await fetchSubscriptions(ctx);
-      }
-    },
-    'get-customers': {
-      handler: async (_, ctx) => {
-        const config = await getStripeConfig(ctx);
-        const secretKey = await ctx.crypto?.decrypt(config.encryptedKey) || '';
-        const response = await stripeRequest<StripeListResponse<StripeCustomer>>(ctx, secretKey, 'GET', '/v1/customers', { limit: 20 });
-        return response.data;
-      }
-    },
-    'get-products': {
-      handler: async (_, ctx) => {
-        const config = await getStripeConfig(ctx);
-        const secretKey = await ctx.crypto?.decrypt(config.encryptedKey) || '';
-        const response = await stripeRequest<StripeListResponse<StripeProduct>>(ctx, secretKey, 'GET', '/v1/products', { active: true });
-        return response.data;
-      }
-    }
-  },
-
-  admin: {
-    handler: async (interaction: BlockInteraction, ctx: PluginContext): Promise<BlockResponse> => {
-      const { type } = interaction;
-      const config = await getStripeConfig(ctx);
-
-      // Handle Settings & Reset (Server-side for safety/KV access)
-      if (interaction.type === 'page_load' && interaction.page === '/settings') {
         return renderSettingsPage(config);
       }
+    },
+    {
+      path: '__widget__/mrr-stats', label: 'Widget',
+      render: async (ctx) => await renderMrrWidget(ctx)
+    },
+    { path: '/', label: 'Overview', icon: 'layout-dashboard', render: async (ctx) => renderRoot(ctx, '/') },
+    { path: '/subscriptions', label: 'Subscriptions', icon: 'refresh-cw', render: async (ctx) => renderRoot(ctx, '/subscriptions') },
+    { path: '/products', label: 'Products', icon: 'package', render: async (ctx) => renderRoot(ctx, '/products') },
+    { path: '/customers', label: 'Customers', icon: 'users', render: async (ctx) => renderRoot(ctx, '/customers') }
+  ],
 
-      // Handle Dashboard Widget
-      if (interaction.type === 'page_load' && interaction.page === '__widget__/mrr-stats') {
-        return await renderMrrWidget(ctx);
-      }
+  routes: {
+    'get-balance': route.get().handler(async (_, ctx) => {
+      const config = await getStripeConfig(ctx);
+      const secretKey = await ctx.crypto?.decrypt(config.encryptedKey) || '';
+      return await stripeRequest<StripeBalance>(ctx, secretKey, 'GET', '/v1/balance');
+    }),
+    'get-charges': route.get().handler(async (_, ctx) => {
+      const config = await getStripeConfig(ctx);
+      const secretKey = await ctx.crypto?.decrypt(config.encryptedKey) || '';
+      const response = await stripeRequest<StripeListResponse<StripeCharge>>(ctx, secretKey, 'GET', '/v1/charges', { limit: 10 });
+      return response.data;
+    }),
+    'get-subscriptions': route.get().handler(async (_, ctx) => {
+      return await fetchSubscriptions(ctx);
+    }),
+    'get-customers': route.get().handler(async (_, ctx) => {
+      const config = await getStripeConfig(ctx);
+      const secretKey = await ctx.crypto?.decrypt(config.encryptedKey) || '';
+      const response = await stripeRequest<StripeListResponse<StripeCustomer>>(ctx, secretKey, 'GET', '/v1/customers', { limit: 20 });
+      return response.data;
+    }),
+    'get-products': route.get().handler(async (_, ctx) => {
+      const config = await getStripeConfig(ctx);
+      const secretKey = await ctx.crypto?.decrypt(config.encryptedKey) || '';
+      const response = await stripeRequest<StripeListResponse<StripeProduct>>(ctx, secretKey, 'GET', '/v1/products', { active: true });
+      return response.data;
+    })
+  },
 
-      if (type === 'form_submit') {
-        if (interaction.formId === 'settings-form') {
-          const vals = interaction.values as any;
-          const newConfig: StripeConfig = {
-            ...config,
-            currency: vals.currency ?? config.currency,
-            testMode: vals.testMode ?? config.testMode
-          };
-          if (vals.secretKey && vals.secretKey !== '••••••••') {
-            newConfig.encryptedKey = await ctx.crypto?.encrypt(vals.secretKey) || vals.secretKey;
-          }
-          await ctx.kv.set('config', newConfig);
-          return { toast: { type: 'success', message: 'Settings saved.' }, ...renderSettingsPage(newConfig) };
+  actions: {
+    'settings-form': action.define()
+      .input(z.object({
+        secretKey: z.string().optional(),
+        currency: z.string().optional(),
+        testMode: z.boolean().optional()
+      }))
+      .handler(async ({ input }, ctx) => {
+        const config = await getStripeConfig(ctx);
+        const newConfig: StripeConfig = {
+          ...config,
+          currency: input.currency ?? config.currency,
+          testMode: input.testMode ?? config.testMode
+        };
+        if (input.secretKey && input.secretKey !== '••••••••') {
+          newConfig.encryptedKey = await ctx.crypto?.encrypt(input.secretKey) || input.secretKey;
         }
-        if (interaction.formId === 'reset-plugin-form') {
-          await ctx.kv.delete('config');
-          return { toast: { type: 'success', message: 'Plugin has been reset.' }, ...renderSettingsPage({ encryptedKey: '', currency: 'usd', testMode: true }) };
-        }
-      }
+        await ctx.kv.set('config', newConfig);
+        return { toast: ui.toast('success', 'Settings saved.'), ...renderSettingsPage(newConfig) };
+      }),
 
-      // Everything else served by the Root Component (SPA-mode)
-      if (!config.encryptedKey) return renderWelcome();
-
-      return {
-        blocks: [
-          {
-            type: 'custom',
-            component: 'stripe-root',
-            props: {
-              activePage: interaction.type === 'page_load' ? interaction.page : '/',
-              config: { currency: config.currency, testMode: config.testMode }
-            }
-          }
-        ]
-      };
+    'reset-plugin-form': async (interaction, ctx) => {
+      await ctx.kv.delete('config');
+      return { toast: ui.toast('success', 'Plugin has been reset.'), ...renderSettingsPage({ encryptedKey: '', currency: 'usd', testMode: true }) };
     }
   }
 });
@@ -191,65 +162,54 @@ async function getStripeConfig(ctx: PluginContext): Promise<StripeConfig> {
   return await ctx.kv.get('config') as StripeConfig || { encryptedKey: '', currency: 'usd', testMode: true };
 }
 
-function renderWelcome(): BlockResponse {
-  return {
-    blocks: [
-      { type: 'header', text: 'Secure Stripe Connection', size: 'lg' },
-      { type: 'text', text: 'Enter your API keys in the settings to unlock the premium dashboard.' }
-    ]
-  };
+async function renderRoot(ctx: PluginContext, activePage: string): Promise<BlockResponse> {
+  const config = await getStripeConfig(ctx);
+  if (!config.encryptedKey) {
+    return ui.page([
+      ui.header('Secure Stripe Connection', { size: 'lg' }),
+      ui.text('Enter your API keys in the settings to unlock the premium dashboard.')
+    ]);
+  }
+
+  return ui.page([
+    ui.custom('stripe-root', { activePage, config: { currency: config.currency, testMode: config.testMode } })
+  ]);
 }
 
 function renderSettingsPage(config: StripeConfig): BlockResponse {
-  const resetFormBlock = config.encryptedKey ? [
-    { type: 'divider' },
-    { type: 'header', text: 'Danger Zone', size: 'md' },
-    { type: 'text', text: 'Permanently remove your Stripe configuration and encrypted keys.' },
-    {
-      type: 'form',
-      id: 'reset-plugin-form',
-      submitLabel: 'Reset Plugin Data',
-      blocks: [
-        { type: 'alert', status: 'warning', message: 'This action cannot be undone.' }
-      ]
-    }
-  ] : [];
+  const blocks = [
+    ui.header('Stripe Settings', { size: 'lg' }),
+    ui.form('settings-form', { submitLabel: 'Save and Encrypt' }, [
+      ui.input('secretKey', 'Stripe Secret Key', { placeholder: 'sk_test_...', defaultValue: config.encryptedKey ? '••••••••' : '', required: true }),
+      ui.select('currency', 'Default Currency', [{ label: 'USD', value: 'usd' }, { label: 'BRL', value: 'brl' }], { defaultValue: config.currency }),
+      ui.toggle('testMode', 'Test Mode', { defaultValue: config.testMode })
+    ])
+  ];
 
-  return {
-    blocks: [
-      { type: 'header', text: 'Stripe Settings', size: 'lg' },
-      {
-        type: 'form',
-        id: 'settings-form',
-        submitLabel: 'Save and Encrypt',
-        blocks: [
-          { type: 'input', id: 'secretKey', label: 'Stripe Secret Key', placeholder: 'sk_test_...', defaultValue: config.encryptedKey ? '••••••••' : '', required: true },
-          { type: 'select', id: 'currency', label: 'Default Currency', options: [{ label: 'USD', value: 'usd' }, { label: 'BRL', value: 'brl' }], defaultValue: config.currency },
-          { type: 'toggle', id: 'testMode', label: 'Test Mode', defaultValue: config.testMode }
-        ]
-      },
-      ...resetFormBlock
-    ] as any[]
-  };
+  if (config.encryptedKey) {
+    blocks.push(
+      ui.divider(),
+      ui.header('Danger Zone', { size: 'md' }),
+      ui.text('Permanently remove your Stripe configuration and encrypted keys.'),
+      ui.form('reset-plugin-form', { submitLabel: 'Reset Plugin Data' }, [
+        ui.alert('Warning', 'This action cannot be undone.', { status: 'warning' })
+      ])
+    );
+  }
+
+  return ui.page(blocks);
 }
 
 async function renderMrrWidget(ctx: PluginContext): Promise<BlockResponse> {
-  // Logic to fetch MRR quickly for the dashboard
   const data = await fetchSubscriptions(ctx);
   const mrr = (data || []).reduce((acc: number, s: any) => acc + (s.items?.data?.[0]?.price?.unit_amount || 0), 0);
-  
-  return {
-    blocks: [
-      {
-        type: 'grid',
-        columns: 2,
-        blocks: [
-          { type: 'stat', label: 'Monthly Revenue', value: (mrr / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' }) },
-          { type: 'stat', label: 'Active Subs', value: (data || []).length }
-        ]
-      }
-    ]
-  };
+
+  return ui.page([
+    ui.grid(2, [
+      ui.stat('Monthly Revenue', (mrr / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' })),
+      ui.stat('Active Subs', (data || []).length)
+    ])
+  ]);
 }
 
 async function fetchSubscriptions(ctx: PluginContext): Promise<StripeSubscription[]> {

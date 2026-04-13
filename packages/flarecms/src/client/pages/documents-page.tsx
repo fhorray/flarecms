@@ -70,7 +70,7 @@ export function DocumentsPage() {
       </header>
 
       {!hasFields && (
-        <div className="p-8 border-2 border-dashed border-primary/20 bg-primary/5 rounded-xl animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="p-8 border-2 border-dashed border-primary/20 bg-primary/5 rounded-xl">
           <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
             <div className="size-12 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shrink-0">
               <SettingsIcon className="size-6" />
