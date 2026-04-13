@@ -1,5 +1,6 @@
+/** @jsxImportSource react */
 import React, { useState } from 'react';
-import type { FormBlock, BlockInteraction } from '../../lib/block-types';
+import type { FormBlock, BlockInteraction, Block } from '../../lib/block-types';
 import { Button } from '../ui/button';
 import { BlockRenderer } from './block-renderer';
 
@@ -36,9 +37,6 @@ export function BlockForm({ block, onAction }: BlockFormProps) {
     });
   };
 
-  // We need to pass down the handleChange to input blocks inside the form.
-  // One way is to wrap the onAction but that's messy.
-  // Better: Use a custom onAction for the internal renderer.
   const handleInternalAction = (action: BlockInteraction) => {
     if (action.type === 'block_action' && action.blockId) {
       handleInputChange(action.blockId, action.value);

@@ -5,6 +5,9 @@ export { adaptEntry } from './adapt-entry';
 export { createPluginContext } from './context';
 export { pluginMiddleware } from './middleware';
 
+export { definePage } from './define-page';
+export * as UI from './ui/index';
+
 export type {
   BlockInteraction,
   BlockResponse,

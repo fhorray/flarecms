@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 'use client';
 
 import * as React from 'react';
@@ -473,12 +474,34 @@ const IconPicker = React.forwardRef<
 IconPicker.displayName = 'IconPicker';
 
 interface IconProps extends Omit<LucideProps, 'ref'> {
-  name: IconName;
+  name: string; // relax type for safer check
+}
+
+/**
+ * Normalizes a PascalCase icon name to kebab-case (e.g., LayoutDashboard -> layout-dashboard)
+ */
+function normalizeIconName(name: string): string {
+  return name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
 }
 
 const Icon = React.forwardRef<React.ComponentRef<LucideIcon>, IconProps>(
   ({ name, ...props }, ref) => {
-    return <DynamicIcon name={name} {...props} ref={ref} />;
+    if (!name) return null;
+    
+    // Check direct name
+    if (name in dynamicIconImports) {
+      return <DynamicIcon name={name as IconName} {...props} ref={ref} />;
+    }
+
+    // Try normalization
+    const normalized = normalizeIconName(name);
+    if (normalized in dynamicIconImports) {
+       return <DynamicIcon name={normalized as IconName} {...props} ref={ref} />;
+    }
+    
+    // Fallback to null (safe)
+    console.warn(`[flarecms] Icon "${name}" not found in Lucide DynamicIcon registry.`);
+    return null;
   },
 );
 Icon.displayName = 'Icon';

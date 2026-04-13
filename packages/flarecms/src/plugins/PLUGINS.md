@@ -80,57 +80,71 @@ export default definePlugin({
     }
   },
 
-  // Admin UI Handler (Block Kit)
+  // Admin UI Handler (JSX-like Block Kit)
   admin: {
-    handler: async (interaction, ctx) => {
-      return {
-        blocks: [
-          { type: 'header', text: 'Plugin Overview', size: 'lg' },
-          { type: 'text', text: 'Dashboard content goes here.' }
-        ]
-      };
-    }
+    handler: definePage(async (interaction, ctx) => {
+      return (
+        <Page>
+          <Header size="lg">Plugin Overview</Header>
+          <Text>Dashboard content goes here.</Text>
+        </Page>
+      );
+    })
   }
 });
 ```
 
 ---
 
-## Administrative UI (Block Kit)
+## Administrative UI (Block Kit with JSX)
 
-FlareCMS uses **Block Kit**, a declarative UI system. Your plugin backend returns a list of blocks, and the CMS renders them safely.
+FlareCMS uses **Block Kit**, a declarative UI system. You can author your UIs using a **JSX-like syntax**, which is automatically compiled into the underlying JSON Block objects the CMS uses to render safely. 
 
-### Interaction Logic
-When a user visits your plugin page or clicks a button, the `admin.handler` is invoked with a `BlockInteraction`.
+To use JSX, just add the `/** @jsxImportSource flarecms/jsx-runtime */` pragma (or configure it in your `tsconfig.json`) and import the components from `flarecms/ui`.
 
-```typescript
-admin: {
-  handler: async (interaction, ctx) => {
-    // 1. Detect if it's an initial page load
-    if (interaction.type === 'page_load') {
-      if (interaction.page === '/settings') {
-        return renderSettingsPage();
+```tsx
+/** @jsxImportSource flarecms/jsx-runtime */
+import { definePlugin, definePage } from 'flarecms/plugins';
+import { Page, Header, Form, Input, AutoForm } from 'flarecms/ui';
+import { z } from 'zod';
+
+const configSchema = z.object({
+  apiKey: z.string().min(1),
+  active: z.boolean().default(true)
+});
+
+export default definePlugin({
+  // ... metadata
+  admin: {
+    handler: definePage(async (interaction, ctx) => {
+      // 1. Detect button clicks or form submissions
+      if (interaction.type === 'form_submit' && interaction.formId === 'save-config') {
+        await ctx.kv.set('config', interaction.values);
+        return { toast: { type: 'success', message: 'Settings saved!' } }; // definePage handles raw block/toast returns too!
       }
-    }
 
-    // 2. Detect a button click
-    if (interaction.type === 'block_action' && interaction.blockId === 'save-btn') {
-      await ctx.kv.set('config', interaction.value);
-      return {
-        toast: { type: 'success', message: 'Settings saved!' },
-        blocks: [...]
-      };
-    }
+      // 2. Return JSX for pages
+      if (interaction.type === 'page_load' && interaction.page === '/settings') {
+         return (
+           <Page>
+             <Header size="lg">Settings</Header>
+             {/* AutoForm infers fields from Zod! */}
+             <AutoForm action="save-config" submitLabel="Save" schema={configSchema} />
+           </Page>
+         );
+      }
+      
+      return <Page><Header>Not Found</Header></Page>;
+    })
   }
-}
+});
 ```
 
-### Supported Blocks
-- `header`, `text`, `divider`, `stat`
-- `input`, `textarea`, `select`, `toggle`
-- `button`, `button_group`
-- `table`, `alert`, `card`, `grid`, `form`
-- `custom` (Direct React injection)
+### Supported UI Components (`flarecms/ui`)
+- **Layout & Display**: `Page`, `Header`, `Text`, `Divider`, `Stat`, `Alert`, `Card`, `Grid`, `Table`
+- **Interactive**: `Button`, `ButtonGroup`
+- **Forms**: `Form`, `Input`, `Textarea`, `Select`, `Toggle`, `AutoForm` (generates fields from a Zod schema)
+- **Advanced**: `Custom` (Direct React injection)
 
 ---
 

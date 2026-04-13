@@ -4,7 +4,7 @@
   "description": "A FlareCMS plugin starter template",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.tsx"
   },
   "dependencies": {
     "flarecms": "workspace:*"

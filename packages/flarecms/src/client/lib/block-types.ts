@@ -20,6 +20,25 @@ export type BlockType =
   | 'card'
   | 'grid'
   | 'form'
+  | 'accordion'
+  | 'avatar'
+  | 'badge'
+  | 'breadcrumb'
+  | 'calendar'
+  | 'carousel'
+  | 'checkbox'
+  | 'combobox'
+  | 'dialog'
+  | 'input_otp'
+  | 'item'
+  | 'pagination'
+  | 'progress'
+  | 'scroll_area'
+  | 'sheet'
+  | 'slider'
+  | 'spinner'
+  | 'tabs'
+  | 'label'
   | 'custom';
 
 export interface BaseBlock {
@@ -133,6 +152,134 @@ export interface FormBlock extends BaseBlock {
   blocks: Block[];
 }
 
+export interface AccordionBlock extends BaseBlock {
+  type: 'accordion';
+  items: Array<{ label: string; blocks: Block[] }>;
+}
+
+export interface AvatarBlock extends BaseBlock {
+  type: 'avatar';
+  src?: string;
+  fallback: string;
+  size?: 'sm' | 'default' | 'lg';
+}
+
+export interface BadgeBlock extends BaseBlock {
+  type: 'badge';
+  text: string;
+  variant?: 'default' | 'secondary' | 'destructive' | 'outline';
+}
+
+export interface BreadcrumbBlock extends BaseBlock {
+  type: 'breadcrumb';
+  items: Array<{ label: string; href?: string }>;
+}
+
+export interface CalendarBlock extends BaseBlock {
+  type: 'calendar';
+  id: string;
+  mode?: 'single' | 'range';
+  value?: any;
+}
+
+export interface CarouselBlock extends BaseBlock {
+  type: 'carousel';
+  items: Block[][]; // Array of slides, each slide is an array of blocks
+  orientation?: 'horizontal' | 'vertical';
+}
+
+export interface CheckboxBlock extends BaseBlock {
+  type: 'checkbox';
+  id: string;
+  label?: string;
+  checked?: boolean;
+}
+
+export interface ComboboxBlock extends BaseBlock {
+  type: 'combobox';
+  id: string;
+  label?: string;
+  options: Array<{ label: string; value: string }>;
+  placeholder?: string;
+  value?: string;
+}
+
+export interface DialogBlock extends BaseBlock {
+  type: 'dialog';
+  title?: string;
+  description?: string;
+  trigger: string | Block;
+  blocks: Block[];
+}
+
+export interface InputOTPBlock extends BaseBlock {
+  type: 'input_otp';
+  id: string;
+  length?: number;
+}
+
+export interface ItemBlock extends BaseBlock {
+  type: 'item';
+  title: string;
+  description?: string;
+  media?: Block;
+  actions?: Block[];
+}
+
+export interface PaginationBlock extends BaseBlock {
+  type: 'pagination';
+  id: string;
+  totalPages: number;
+  currentPage: number;
+}
+
+export interface ProgressBlock extends BaseBlock {
+  type: 'progress';
+  value: number;
+  max?: number;
+}
+
+export interface ScrollAreaBlock extends BaseBlock {
+  type: 'scroll_area';
+  height?: string | number;
+  blocks: Block[];
+}
+
+export interface SheetBlock extends BaseBlock {
+  type: 'sheet';
+  title?: string;
+  description?: string;
+  trigger: string | Block;
+  side?: 'top' | 'right' | 'bottom' | 'left';
+  blocks: Block[];
+}
+
+export interface SliderBlock extends BaseBlock {
+  type: 'slider';
+  id: string;
+  min?: number;
+  max?: number;
+  step?: number;
+  value?: number | number[];
+}
+
+export interface SpinnerBlock extends BaseBlock {
+  type: 'spinner';
+  size?: 'sm' | 'md' | 'lg';
+}
+
+export interface TabsBlock extends BaseBlock {
+  type: 'tabs';
+  id: string;
+  defaultValue?: string;
+  items: Array<{ label: string; value: string; blocks: Block[] }>;
+}
+
+export interface LabelBlock extends BaseBlock {
+  type: 'label';
+  text: string;
+}
+
 export interface CustomBlock extends BaseBlock {
   type: 'custom';
   component: string;
@@ -155,6 +302,24 @@ export type Block =
   | CardBlock
   | GridBlock
   | FormBlock
+  | AccordionBlock
+  | AvatarBlock
+  | BadgeBlock
+  | BreadcrumbBlock
+  | CalendarBlock
+  | CarouselBlock
+  | CheckboxBlock
+  | ComboboxBlock
+  | DialogBlock
+  | InputOTPBlock
+  | ItemBlock
+  | PaginationBlock
+  | ProgressBlock
+  | ScrollAreaBlock
+  | SheetBlock
+  | SliderBlock
+  | SpinnerBlock
+  | TabsBlock
   | CustomBlock;
 
 // --- Interactions ---
@@ -171,3 +336,4 @@ export interface BlockResponse {
     message: string;
   };
 }
+
