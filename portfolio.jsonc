@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "priority": 3,
+  "tags": ["cloudflare", "typescript", "cloudflare-workers"],
+  "pt": {
+    "title": "FlareCMS",
+    "description": "Um CMS leve e nativo para a borda (Edge) na era da IA."
+  },
+  "en": {
+    "title": "FlareCMS",
+    "description": "The Lean, Edge-Native CMS for the AI Era."
+  },
+  "cover": "/placeholder.png"
+}
